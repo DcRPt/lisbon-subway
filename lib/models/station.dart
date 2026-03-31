@@ -10,4 +10,5 @@ class Station {
   final String lineName;
   final List<IncidentReport> reports;
 
+  Station(this.id, this.name, this.latitude, this.longitude, this.lineName, this.reports);
 }

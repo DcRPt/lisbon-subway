@@ -17,4 +17,5 @@ class IncidentReport {
   final String? notes;
   final IncidentType type;
 
+  IncidentReport(this.timestamp, this.rate, this.notes, this.type);
 }
