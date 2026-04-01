@@ -3,8 +3,10 @@ import 'package:cmproject/models/station.dart';
 
 class MetroRepository {
 
+  final List<Station> _stations = [];
+
   List<Station> getAllStations() {
-    throw UnimplementedError("getAllStations");
+    return List.from(_stations);
   }
 
   void attachIncident(String id, IncidentReport report)  {
@@ -12,7 +14,7 @@ class MetroRepository {
   }
 
   void insertStation(Station station)  {
-    throw UnimplementedError("insertStation");
+    _stations.add(station);
   }
 
   Station getStationDetail(String id) {
