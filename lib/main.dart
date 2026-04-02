@@ -1,8 +1,17 @@
+import 'package:cmproject/data/metro_repository.dart';
 import 'package:cmproject/screens/main_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  final repo = MetroRepository();
+
+  runApp(
+      Provider<MetroRepository>.value(
+        value: repo,
+        child: const MyApp(),
+      )
+  );
 }
 
 class MyApp extends StatelessWidget {
