@@ -1,9 +1,6 @@
-import 'dart:core';
-
 import 'incident_report.dart';
 
 class Station {
-
   final String id;
   final String name;
   final double latitude;
@@ -11,7 +8,14 @@ class Station {
   final String lineName;
   final List<IncidentReport> reports;
 
-  Station(this.id, this.name, this.latitude, this.longitude, this.lineName, this.reports);
+  Station({
+    required this.id,
+    required this.name,
+    required this.latitude,
+    required this.longitude,
+    required this.lineName,
+    List<IncidentReport>? reports,
+  }) : reports = reports ?? [];
 
   double get averageRating {
     if (reports.isEmpty) {

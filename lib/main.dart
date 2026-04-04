@@ -3,8 +3,11 @@ import 'package:cmproject/screens/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'data/mock_stations.dart';
+
 void main() {
   final repo = MetroRepository();
+  seedMockData(repo);
 
   runApp(
       Provider<MetroRepository>.value(
