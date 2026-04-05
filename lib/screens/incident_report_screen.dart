@@ -19,7 +19,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
   Station? _station;
   IncidentType? _type;
   int? _severity;
-  DateTime _dateTime = DateTime.now();
+  DateTime? _dateTime;
   String? _notes;
 
   Future<void> _pickDateTime(Function(DateTime?) onPicked) async {
@@ -45,7 +45,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
   }
 
   void _submit() {
-    if (_station == null || _type == null || _severity == null) {
+    if (_station == null || _type == null || _severity == null || _dateTime == null) {
       _formKey.currentState!.validate();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Preencha todos os campos obrigatórios.'),
@@ -58,13 +58,13 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
       context.read<MetroRepository>().attachIncident(
         _station!.id,
         IncidentReport(
-          timestamp: _dateTime,
+          timestamp: _dateTime!,
           rate: _severity!,
           type: _type!,
           notes: _notes?.trim().isEmpty ?? true ? null : _notes,
         ),
       );
-      setState(() { _station = null; _type = null; _severity = null; _dateTime = DateTime.now(); _notes = null; });
+      setState(() { _station = null; _type = null; _severity = null; _dateTime = null; _notes = null; });
       _formKey.currentState!.reset();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Incidente registado com sucesso.'),
@@ -160,7 +160,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Severity — no container, custom layout
+              // Severity
               TestableFormField<int>(
                 key: const Key('incident-rating-field'),
                 getValue: () => _severity as int,
@@ -225,14 +225,15 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
               // Date and time
               TestableFormField<DateTime>(
                 key: const Key('incident-datetime-field'),
-                getValue: () => _dateTime,
+                getValue: () => _dateTime as DateTime,
                 internalSetValue: (state, v) { _dateTime = v; state.didChange(v); },
-                onSaved: (v) => _dateTime = v!,
+                validator: (v) => v == null ? 'Preencha a data e hora' : null,
+                onSaved: (v) => _dateTime = v,
                 builder: (field) => _field('Data e hora', ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(
-                    DateFormat('dd/MM/yyyy HH:mm').format(_dateTime),
-                    style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A2E)),
+                    _dateTime != null ? DateFormat('dd/MM/yyyy HH:mm').format(_dateTime!) : 'Selecione a data e hora',
+                    style: TextStyle(fontSize: 14, color: _dateTime != null ? const Color(0xFF1A1A2E) : const Color(0xFF6B6B7A)),
                   ),
                   trailing: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF6B6B7A)),
                   onTap: () => _pickDateTime(field.didChange),
