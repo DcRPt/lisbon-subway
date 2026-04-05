@@ -6,6 +6,7 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
+      key: const Key('dashboard-screen'),
       body: Center(child: Text('Dashboard Screen')),
     );
   }

@@ -5,14 +5,17 @@ class MapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.asset(
-          'assets/images/map.png',
-          fit: BoxFit.cover,
-        ),
-      ],
+    return Scaffold(
+      key: const Key('map-screen'),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/images/map.png',
+            fit: BoxFit.cover,
+          ),
+        ],
+      ),
     );
   }
 }

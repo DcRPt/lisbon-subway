@@ -6,6 +6,7 @@ class ListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
+      key: const Key('list-screen'),
       body: Center(child: Text('List Screen')),
     );
   }
