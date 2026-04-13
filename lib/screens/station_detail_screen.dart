@@ -118,10 +118,6 @@ class _StationInfoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            'Linha ${station.lineName}',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B7A)),
-          ),
           const Divider(height: 20),
           // Métricas
           Row(

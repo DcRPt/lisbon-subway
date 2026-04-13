@@ -8,7 +8,7 @@ void seedMockData(MetroRepository repo) {
     name: 'Oriente',
     latitude: 38.7675,
     longitude: -9.0988,
-    lineName: 'Linha Vermelha',
+    lineName: 'Vermelha',
     reports: [
       IncidentReport(timestamp: DateTime(2025, 4, 1, 8, 30), rate: 3, notes: 'Escada rolante parada no acesso principal.', type: IncidentType.Escalator),
       IncidentReport(timestamp: DateTime(2025, 4, 2, 14, 0), rate: 5, notes: 'Elevador avariado, sem alternativa acessível.', type: IncidentType.Elevator),
@@ -22,7 +22,7 @@ void seedMockData(MetroRepository repo) {
     name: 'Marquês de Pombal',
     latitude: 38.7262,
     longitude: -9.1499,
-    lineName: 'Linha Azul',
+    lineName: 'Azul',
     reports: [
       IncidentReport(timestamp: DateTime(2025, 4, 3, 11, 0), rate: 1, type: IncidentType.Other),
     ],
@@ -33,6 +33,6 @@ void seedMockData(MetroRepository repo) {
     name: 'Rossio',
     latitude: 38.7143,
     longitude: -9.1393,
-    lineName: 'Linha Verde',
+    lineName: 'Verde',
   ));
 }
