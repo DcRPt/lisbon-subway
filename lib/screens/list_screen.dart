@@ -27,8 +27,8 @@ class ListScreen extends StatelessWidget {
                   Text(station.name),
                   Text(
                     "Linha ${station.lineName}",
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF6B6B7A)),
+                    style:
+                        const TextStyle(fontSize: 12, color: Color(0xFF6B6B7A)),
                   ),
                 ],
               ),
