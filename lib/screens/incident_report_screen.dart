@@ -1,6 +1,7 @@
 import 'package:cmproject/data/metro_repository.dart';
 import 'package:cmproject/models/incident_report.dart';
 import 'package:cmproject/models/station.dart';
+import 'package:cmproject/data/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -49,7 +50,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
       _formKey.currentState!.validate();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Preencha todos os campos obrigatórios.'),
-        backgroundColor: Color(0xFFC0392B),
+        backgroundColor: AppColors.kErrorRed,
       ));
       return;
     }
@@ -68,12 +69,12 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
       _formKey.currentState!.reset();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Incidente registado com sucesso.'),
-        backgroundColor: Color(0xFF2E7D6B),
+        backgroundColor: AppColors.kSuccessGreen,
       ));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Erro: $e'),
-        backgroundColor: const Color(0xFFC0392B),
+        backgroundColor: AppColors.kErrorRed,
       ));
     }
   }
@@ -83,15 +84,15 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B7A))),
-          if (required) const Text(' *', style: TextStyle(fontSize: 12, color: Color(0xFFC0392B))),
+          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.kFieldText)),
+          if (required) const Text(' *', style: TextStyle(fontSize: 12, color: AppColors.kErrorRed)),
         ]),
         const SizedBox(height: 4),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF2F0EB),
+            color: AppColors.kFieldBg,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: hasError ? const Color(0xFFC0392B) : const Color(0xFFD8D6CF)),
+            border: Border.all(color: hasError ? AppColors.kErrorRed : AppColors.kFieldBorder),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: child,
@@ -99,7 +100,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
         if (errorText != null)
           Padding(
             padding: const EdgeInsets.only(top: 3),
-            child: Text(errorText, style: const TextStyle(fontSize: 11, color: Color(0xFFC0392B))),
+            child: Text(errorText, style: const TextStyle(fontSize: 11, color: AppColors.kErrorRed)),
           ),
       ],
     );
@@ -108,13 +109,13 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
   @override
   Widget build(BuildContext context) {
     final stations = context.read<MetroRepository>().getAllStations();
-    const ramp = [Color(0xFF2E7D6B), Color(0xFF5A9E3A), Color(0xFFF5A800), Color(0xFFB36B00), Color(0xFFC0392B)];
+    const ramp = [AppColors.kSuccessGreen, Color(0xFF5A9E3A), Color(0xFFF5A800), Color(0xFFB36B00), AppColors.kErrorRed];
 
     return Scaffold(
       key: const Key('incidents-report-screen'),
       backgroundColor: const Color(0xFFFAFAF8),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF003087),
+        backgroundColor: AppColors.kNavyBlue,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text('Reportar incidente',
@@ -128,7 +129,6 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              // Station
               TestableFormField<Station>(
                 key: const Key('incident-station-selection-field'),
                 getValue: () => _station as Station,
@@ -137,14 +137,13 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                 onSaved: (v) => _station = v,
                 builder: (field) => _field('Estação', DropdownButton<Station>(
                   value: _station, isExpanded: true, underline: const SizedBox(),
-                  hint: const Text('Selecione uma estação', style: TextStyle(fontSize: 14, color: Color(0xFF6B6B7A))),
+                  hint: const Text('Selecione uma estação', style: TextStyle(fontSize: 14, color: AppColors.kFieldText)),
                   items: stations.map((s) => DropdownMenuItem(value: s, child: Text(s.name))).toList(),
                   onChanged: (v) { field.didChange(v); setState(() => _station = v); },
                 ), hasError: field.errorText != null, errorText: field.errorText),
               ),
               const SizedBox(height: 16),
 
-              // Problem type
               TestableFormField<IncidentType>(
                 key: const Key('incident-type-selection-field'),
                 getValue: () => _type as IncidentType,
@@ -153,14 +152,13 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                 onSaved: (v) => _type = v,
                 builder: (field) => _field('Tipo de problema', DropdownButton<IncidentType>(
                   value: _type, isExpanded: true, underline: const SizedBox(),
-                  hint: const Text('Selecione o tipo de problema', style: TextStyle(fontSize: 14, color: Color(0xFF6B6B7A))),
+                  hint: const Text('Selecione o tipo de problema', style: TextStyle(fontSize: 14, color: AppColors.kFieldText)),
                   items: IncidentType.values.map((t) => DropdownMenuItem(value: t, child: Text(t.displayName))).toList(),
                   onChanged: (v) { field.didChange(v); setState(() => _type = v); },
                 ), hasError: field.errorText != null, errorText: field.errorText),
               ),
               const SizedBox(height: 16),
 
-              // Severity
               TestableFormField<int>(
                 key: const Key('incident-rating-field'),
                 getValue: () => _severity as int,
@@ -170,9 +168,9 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                 builder: (field) => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      const Text('Gravidade', style: TextStyle(fontSize: 12, color: Color(0xFF6B6B7A))),
-                      const Text(' *', style: TextStyle(fontSize: 12, color: Color(0xFFC0392B))),
+                    const Row(children: [
+                      Text('Gravidade', style: TextStyle(fontSize: 12, color: AppColors.kFieldText)),
+                      Text(' *', style: TextStyle(fontSize: 12, color: AppColors.kErrorRed)),
                     ]),
                     const SizedBox(height: 8),
                     Row(
@@ -189,17 +187,17 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                                 duration: const Duration(milliseconds: 180),
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: selected ? color.withValues(alpha: 0.13) : const Color(0xFFF2F0EB),
+                                  color: selected ? color.withValues(alpha: 0.13) : AppColors.kFieldBg,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: selected ? color : (field.errorText != null ? const Color(0xFFC0392B) : const Color(0xFFD8D6CF)),
+                                    color: selected ? color : (field.errorText != null ? AppColors.kErrorRed : AppColors.kFieldBorder),
                                     width: selected ? 1.5 : 1,
                                   ),
                                 ),
                                 child: Center(child: Text('$level',
                                   style: TextStyle(fontSize: 15,
                                       fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-                                      color: selected ? color : const Color(0xFF6B6B7A)),
+                                      color: selected ? color : AppColors.kFieldText),
                                 )),
                               ),
                             ),
@@ -209,20 +207,19 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                     ),
                     const SizedBox(height: 4),
                     const Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('1 = menor', style: TextStyle(fontSize: 10, color: Color(0xFF6B6B7A))),
-                      Text('5 = crítico', style: TextStyle(fontSize: 10, color: Color(0xFF6B6B7A))),
+                      Text('1 = menor', style: TextStyle(fontSize: 10, color: AppColors.kFieldText)),
+                      Text('5 = crítico', style: TextStyle(fontSize: 10, color: AppColors.kFieldText)),
                     ]),
                     if (field.errorText != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 3),
-                        child: Text(field.errorText!, style: const TextStyle(fontSize: 11, color: Color(0xFFC0392B))),
+                        child: Text(field.errorText!, style: const TextStyle(fontSize: 11, color: AppColors.kErrorRed)),
                       ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
-              // Date and time
               TestableFormField<DateTime>(
                 key: const Key('incident-datetime-field'),
                 getValue: () => _dateTime as DateTime,
@@ -233,15 +230,14 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                   contentPadding: EdgeInsets.zero,
                   title: Text(
                     _dateTime != null ? DateFormat('dd/MM/yyyy HH:mm').format(_dateTime!) : 'Selecione a data e hora',
-                    style: TextStyle(fontSize: 14, color: _dateTime != null ? const Color(0xFF1A1A2E) : const Color(0xFF6B6B7A)),
+                    style: TextStyle(fontSize: 14, color: _dateTime != null ? const Color(0xFF1A1A2E) : AppColors.kFieldText),
                   ),
-                  trailing: const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF6B6B7A)),
+                  trailing: const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.kFieldText),
                   onTap: () => _pickDateTime(field.didChange),
                 ), hasError: field.errorText != null, errorText: field.errorText),
               ),
               const SizedBox(height: 16),
 
-              // Notes (optional)
               TestableFormField<String>(
                 key: const Key('incident-notes-field'),
                 getValue: () => _notes as String,
@@ -254,14 +250,13 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                     border: InputBorder.none, isDense: true,
                     contentPadding: EdgeInsets.symmetric(vertical: 10),
                     hintText: 'Descreva brevemente o problema...',
-                    hintStyle: TextStyle(fontSize: 14, color: Color(0xFF6B6B7A)),
+                    hintStyle: TextStyle(fontSize: 14, color: AppColors.kFieldText),
                   ),
                   onChanged: (v) { field.didChange(v); _notes = v; },
                 ), required: false),
               ),
               const SizedBox(height: 28),
 
-              // Submit
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -269,7 +264,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                   key: const Key('incident-form-submit-button'),
                   onPressed: _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF003087),
+                    backgroundColor: AppColors.kNavyBlue,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     elevation: 0,
                   ),

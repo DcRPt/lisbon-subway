@@ -1,3 +1,5 @@
+import 'package:cmproject/models/waiting_time.dart';
+
 import 'incident_report.dart';
 
 class Station {
@@ -6,7 +8,9 @@ class Station {
   final double latitude;
   final double longitude;
   final String lineName;
+  final bool isFavourite;
   final List<IncidentReport> reports;
+  final List<WaitingTime> waitingTimes;
 
   Station({
     required this.id,
@@ -14,8 +18,11 @@ class Station {
     required this.latitude,
     required this.longitude,
     required this.lineName,
+    this.isFavourite = false,
     List<IncidentReport>? reports,
-  }) : reports = reports ?? [];
+    List<WaitingTime>? waitingTimes,
+  })  : reports   = reports ?? [],
+        waitingTimes = waitingTimes ?? [];
 
   double get averageRating {
     if (reports.isEmpty) {
@@ -23,5 +30,12 @@ class Station {
     }
     final totalRating = reports.fold(0, (sum, report) => sum + report.rate);
     return totalRating / reports.length;
+  }
+
+  int? get frequencyMinutes {
+    final first = waitingTimes.firstOrNull;
+    if (first == null || first.arrivalsSeconds.length < 2) return null;
+    final gap = first.arrivalsSeconds[1] - first.arrivalsSeconds[0];
+    return (gap / 60).round();
   }
 }

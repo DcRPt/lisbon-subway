@@ -45,4 +45,7 @@ class MetroRepository {
         .where((s) => s.lineName.toLowerCase() == query)
         .toList(growable: false);
   }
+
+  List<Station> getFavourites() =>
+      _stations.where((s) => s.isFavourite).toList(growable: false);
 }
