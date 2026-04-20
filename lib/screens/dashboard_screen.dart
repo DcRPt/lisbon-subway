@@ -1,8 +1,22 @@
 import 'package:cmproject/data/metro_repository.dart';
 import 'package:cmproject/models/station.dart';
-import 'package:cmproject/data/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+// ── Palette ───────────────────────────────────────────────────────────────────
+const _blue  = Color(0xFF2563EB);
+const _green = Color(0xFF16A34A);
+const _red   = Color(0xFFDC2626);
+const _amber = Color(0xFFF59E0B);
+const _grey  = Color(0xFF6B7280);
+const _light = Color(0xFFF3F4F6);
+
+const _lineColors = <String, Color>{
+  'azul':     _blue,
+  'verde':    _green,
+  'vermelha': _red,
+  'amarela':  _amber,
+};
 
 String _destinationName(String id) {
   if (id == '10') return 'Reboleira';
@@ -11,14 +25,15 @@ String _destinationName(String id) {
 }
 
 Color _colorForLine(String lineName) =>
-    AppColors.kLineColors[lineName.toLowerCase()] ?? AppColors.kGrey;
+    _lineColors[lineName.toLowerCase()] ?? _grey;
 
+// ── Screen ────────────────────────────────────────────────────────────────────
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final repo       = context.watch<MetroRepository>();
+    final repo       = context.read<MetroRepository>();
     final stations   = repo.getAllStations();
     final favourites = repo.getFavourites();
 
@@ -42,7 +57,7 @@ class DashboardScreen extends StatelessWidget {
 
     return Scaffold(
       key: const Key('dashboard-screen'),
-      backgroundColor: AppColors.kLight,
+      backgroundColor: const Color(0xFFF2F2F7),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -59,17 +74,19 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  // ── Shared ───────────────────────────────────────────────────────────────
+
   Widget _section(String label, Widget child, {IconData? icon}) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Row(children: [
         if (icon != null) ...[
-          Icon(icon, size: 14, color: AppColors.kGrey),
+          Icon(icon, size: 14, color: _grey),
           const SizedBox(width: 4),
         ],
         Text(label, style: const TextStyle(
           fontSize: 11, fontWeight: FontWeight.w700,
-          letterSpacing: 0.8, color: AppColors.kGrey,
+          letterSpacing: 0.8, color: _grey,
         )),
       ]),
       const SizedBox(height: 10),
@@ -97,14 +114,15 @@ class DashboardScreen extends StatelessWidget {
     decoration: BoxDecoration(color: color, shape: BoxShape.circle),
   );
 
-  Widget _timeChips(List<String> times) => Row(
+  Widget _timeChips(List<String> times, {Key? rowKey}) => Row(
+    key: rowKey,
     children: times.map((t) => Padding(
       padding: const EdgeInsets.only(left: 6),
       child: Container(
         width: 44,
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: AppColors.kLight, borderRadius: BorderRadius.circular(10),
+          color: _light, borderRadius: BorderRadius.circular(10),
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(t, style: const TextStyle(
@@ -119,8 +137,13 @@ class DashboardScreen extends StatelessWidget {
     )).toList(),
   );
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // NETWORK STATUS
+  // ─────────────────────────────────────────────────────────────────────────
+
   Widget _networkGrid(BuildContext context, Map<String, bool> lineDisrupted) =>
       GridView.count(
+        key: const Key('dashboard-network-grid'),
         crossAxisCount: 2,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -134,12 +157,15 @@ class DashboardScreen extends StatelessWidget {
   Widget _lineCard(BuildContext context, String lineName, bool disrupted) {
     final color = _colorForLine(lineName);
     return GestureDetector(
-      onTap: () {},
+      key: Key('dashboard-line-card-$lineName'),
+      onTap: () {
+        // TODO: Navigator.push to ListScreen
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: _cardDecoration(
           color: disrupted ? const Color(0xFFFFF7ED) : Colors.white,
-          border: disrupted ? Border.all(color: AppColors.kYellow, width: 1.5) : null,
+          border: disrupted ? Border.all(color: _amber, width: 1.5) : null,
         ),
         child: Row(children: [
           _dot(color, size: 10),
@@ -149,14 +175,16 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(lineName, style: const TextStyle(
-                  fontWeight: FontWeight.w600, fontSize: 13,
-                )),
+                Text(lineName,
+                  key: Key('dashboard-line-name-$lineName'),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
                 Text(
                   disrupted ? 'Disrupted' : 'Normal',
+                  key: Key('dashboard-line-status-$lineName'),
                   style: TextStyle(
                     fontSize: 11,
-                    color: disrupted ? AppColors.kYellow : Colors.grey[500],
+                    color: disrupted ? _amber : Colors.grey[500],
                   ),
                 ),
               ],
@@ -168,7 +196,7 @@ class DashboardScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(3),
                 decoration: const BoxDecoration(
-                  color: AppColors.kYellow, shape: BoxShape.circle,
+                  color: _amber, shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.priority_high_rounded, size: 10, color: Colors.white,
@@ -181,20 +209,28 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // NEAREST STATION
+  // ─────────────────────────────────────────────────────────────────────────
+
   Widget _stationCard(BuildContext context, Station? station) {
     if (station == null) {
       return Container(
+        key: const Key('dashboard-nearest-empty'),
         padding: const EdgeInsets.all(16),
         decoration: _cardDecoration(),
         child: const Text('No stations available.',
-            style: TextStyle(color: AppColors.kGrey, fontSize: 13)),
+            style: TextStyle(color: _grey, fontSize: 13)),
       );
     }
 
     final color = _colorForLine(station.lineName);
 
     return GestureDetector(
-      onTap: () {},
+      key: const Key('dashboard-nearest-card'),
+      onTap: () {
+        // TODO: Navigator.push to StationDetailScreen(station.id)
+      },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: _cardDecoration(),
@@ -205,14 +241,16 @@ class DashboardScreen extends StatelessWidget {
               Row(children: [
                 _dot(color, size: 10),
                 const SizedBox(width: 8),
-                Text(station.name, style: const TextStyle(
-                  fontWeight: FontWeight.w700, fontSize: 15,
-                )),
+                Text(station.name,
+                  key: const Key('dashboard-nearest-name'),
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                ),
               ]),
               Row(children: [
-                Text('320 m', style: TextStyle(
-                  color: Colors.grey[500], fontSize: 13,
-                )),
+                Text('320 m',
+                  key: const Key('dashboard-nearest-distance'),
+                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                ),
                 const SizedBox(width: 2),
                 _navArrow(),
               ]),
@@ -222,41 +260,53 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(height: 14),
             const Divider(height: 1, color: Color(0xFFF0F0F0)),
             const SizedBox(height: 14),
-            ...station.waitingTimes.map((wt) => Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: _platformRow(
-                _destinationName(wt.destinationId),
-                wt.arrivalsMinutes.map((m) => '$m').toList(),
+            for (int i = 0; i < station.waitingTimes.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _platformRow(
+                  i,
+                  _destinationName(station.waitingTimes[i].destinationId),
+                  station.waitingTimes[i].arrivalsMinutes.map((m) => '$m').toList(),
+                ),
               ),
-            )),
           ],
         ]),
       ),
     );
   }
 
-  Widget _platformRow(String dest, List<String> times) => Row(
+  Widget _platformRow(int index, String dest, List<String> times) => Row(
+    key: Key('dashboard-platform-row-$index'),
     children: [
       Expanded(
-        child: Text('→ $dest', style: const TextStyle(
-          fontSize: 13, fontWeight: FontWeight.w600,
-          color: Color(0xFF374151),
-        )),
+        child: Text('→ $dest',
+          key: Key('dashboard-platform-dest-$index'),
+          style: const TextStyle(
+            fontSize: 13, fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
       ),
-      _timeChips(times),
+      _timeChips(times, rowKey: Key('dashboard-platform-chips-$index')),
     ],
   );
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // FAVOURITES
+  // ─────────────────────────────────────────────────────────────────────────
 
   Widget _favList(BuildContext context, List<Station> favourites) {
     if (favourites.isEmpty) {
       return Container(
+        key: const Key('dashboard-favourites-empty'),
         padding: const EdgeInsets.all(16),
         decoration: _cardDecoration(),
         child: const Text('No favourites yet.',
-            style: TextStyle(color: AppColors.kGrey, fontSize: 13)),
+            style: TextStyle(color: _grey, fontSize: 13)),
       );
     }
     return Column(
+      key: const Key('dashboard-favourites-list'),
       children: favourites.map((s) => _favCard(context, s)).toList(),
     );
   }
@@ -266,7 +316,10 @@ class DashboardScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: GestureDetector(
-        onTap: () {},
+        key: Key('dashboard-fav-card-${station.id}'),
+        onTap: () {
+          // TODO: Navigator.push to StationDetailScreen(station.id)
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: _cardDecoration(),
@@ -290,22 +343,26 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _favTitle(Station station) => Row(children: [
-    Text(station.name, style: const TextStyle(
-      fontWeight: FontWeight.w700, fontSize: 14,
-    )),
+    Text(station.name,
+      key: Key('dashboard-fav-name-${station.id}'),
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+    ),
     if (station.isFavourite) ...[
       const SizedBox(width: 5),
-      const Icon(Icons.star_rounded, size: 14, color: AppColors.kYellow),
+      const Icon(Icons.star_rounded, size: 14, color: _amber),
     ],
   ]);
 
   Widget _favDetails(Station station, Color color) => Row(children: [
     _dot(color, size: 8),
     const SizedBox(width: 5),
-    Text(station.lineName, style: const TextStyle(fontSize: 12, color: AppColors.kGrey)),
+    Text(station.lineName,
+      key: Key('dashboard-fav-line-${station.id}'),
+      style: const TextStyle(fontSize: 12, color: _grey),
+    ),
     const SizedBox(width: 8),
     const Icon(Icons.directions_walk_rounded, size: 13, color: Color(0xFF9CA3AF)),
     const SizedBox(width: 3),
-    const Text('6 min', style: TextStyle(fontSize: 12, color: AppColors.kGrey)),
+    const Text('6 min', style: TextStyle(fontSize: 12, color: _grey)),
   ]);
 }
