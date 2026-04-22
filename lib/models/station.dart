@@ -38,4 +38,8 @@ class Station {
     final gap = first.arrivalsSeconds[1] - first.arrivalsSeconds[0];
     return (gap / 60).round();
   }
+  bool get isFavorite{
+    return isFavourite;
+  }
+
 }
