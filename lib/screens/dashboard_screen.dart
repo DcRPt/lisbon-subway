@@ -1,22 +1,8 @@
+import 'package:cmproject/data/app_colors.dart';
 import 'package:cmproject/data/metro_repository.dart';
 import 'package:cmproject/models/station.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-// ── Palette ───────────────────────────────────────────────────────────────────
-const _blue  = Color(0xFF2563EB);
-const _green = Color(0xFF16A34A);
-const _red   = Color(0xFFDC2626);
-const _amber = Color(0xFFF59E0B);
-const _grey  = Color(0xFF6B7280);
-const _light = Color(0xFFF3F4F6);
-
-const _lineColors = <String, Color>{
-  'azul':     _blue,
-  'verde':    _green,
-  'vermelha': _red,
-  'amarela':  _amber,
-};
 
 String _destinationName(String id) {
   if (id == '10') return 'Reboleira';
@@ -25,7 +11,7 @@ String _destinationName(String id) {
 }
 
 Color _colorForLine(String lineName) =>
-    _lineColors[lineName.toLowerCase()] ?? _grey;
+    AppColors.kLineColors[lineName.toLowerCase()] ?? AppColors.kGrey;
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 class DashboardScreen extends StatelessWidget {
@@ -57,7 +43,7 @@ class DashboardScreen extends StatelessWidget {
 
     return Scaffold(
       key: const Key('dashboard-screen'),
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: AppColors.kLight,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -68,6 +54,9 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(height: 20),
             _section('FAVOURITES', _favList(context, favourites),
                 icon: Icons.star_rounded),
+            const SizedBox(height: 20),
+            _section('NETWORK MAP', _subwayMap(context),
+                icon: Icons.map_rounded),
           ],
         ),
       ),
@@ -81,12 +70,12 @@ class DashboardScreen extends StatelessWidget {
     children: [
       Row(children: [
         if (icon != null) ...[
-          Icon(icon, size: 14, color: _grey),
+          Icon(icon, size: 14, color: AppColors.kGrey),
           const SizedBox(width: 4),
         ],
         Text(label, style: const TextStyle(
           fontSize: 11, fontWeight: FontWeight.w700,
-          letterSpacing: 0.8, color: _grey,
+          letterSpacing: 0.8, color: AppColors.kGrey,
         )),
       ]),
       const SizedBox(height: 10),
@@ -122,7 +111,8 @@ class DashboardScreen extends StatelessWidget {
         width: 44,
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: _light, borderRadius: BorderRadius.circular(10),
+          color: AppColors.kLight,
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(t, style: const TextStyle(
@@ -156,8 +146,9 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _lineCard(BuildContext context, String lineName, bool disrupted) {
     final color = _colorForLine(lineName);
-    return GestureDetector(
+    return InkWell(
       key: Key('dashboard-line-card-$lineName'),
+      borderRadius: BorderRadius.circular(16),
       onTap: () {
         // TODO: Navigator.push to ListScreen
       },
@@ -165,7 +156,9 @@ class DashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: _cardDecoration(
           color: disrupted ? const Color(0xFFFFF7ED) : Colors.white,
-          border: disrupted ? Border.all(color: _amber, width: 1.5) : null,
+          border: disrupted
+              ? Border.all(color: AppColors.kYellow, width: 1.5)
+              : null,
         ),
         child: Row(children: [
           _dot(color, size: 10),
@@ -184,7 +177,7 @@ class DashboardScreen extends StatelessWidget {
                   key: Key('dashboard-line-status-$lineName'),
                   style: TextStyle(
                     fontSize: 11,
-                    color: disrupted ? _amber : Colors.grey[500],
+                    color: disrupted ? AppColors.kYellow : Colors.grey[500],
                   ),
                 ),
               ],
@@ -196,7 +189,7 @@ class DashboardScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(3),
                 decoration: const BoxDecoration(
-                  color: _amber, shape: BoxShape.circle,
+                  color: AppColors.kYellow, shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.priority_high_rounded, size: 10, color: Colors.white,
@@ -220,14 +213,15 @@ class DashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: _cardDecoration(),
         child: const Text('No stations available.',
-            style: TextStyle(color: _grey, fontSize: 13)),
+            style: TextStyle(color: AppColors.kGrey, fontSize: 13)),
       );
     }
 
     final color = _colorForLine(station.lineName);
 
-    return GestureDetector(
+    return InkWell(
       key: const Key('dashboard-nearest-card'),
+      borderRadius: BorderRadius.circular(16),
       onTap: () {
         // TODO: Navigator.push to StationDetailScreen(station.id)
       },
@@ -302,7 +296,7 @@ class DashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: _cardDecoration(),
         child: const Text('No favourites yet.',
-            style: TextStyle(color: _grey, fontSize: 13)),
+            style: TextStyle(color: AppColors.kGrey, fontSize: 13)),
       );
     }
     return Column(
@@ -315,8 +309,9 @@ class DashboardScreen extends StatelessWidget {
     final color = _colorForLine(station.lineName);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: GestureDetector(
+      child: InkWell(
         key: Key('dashboard-fav-card-${station.id}'),
+        borderRadius: BorderRadius.circular(16),
         onTap: () {
           // TODO: Navigator.push to StationDetailScreen(station.id)
         },
@@ -349,7 +344,7 @@ class DashboardScreen extends StatelessWidget {
     ),
     if (station.isFavourite) ...[
       const SizedBox(width: 5),
-      const Icon(Icons.star_rounded, size: 14, color: _amber),
+      const Icon(Icons.star_rounded, size: 14, color: AppColors.kYellow),
     ],
   ]);
 
@@ -358,11 +353,66 @@ class DashboardScreen extends StatelessWidget {
     const SizedBox(width: 5),
     Text(station.lineName,
       key: Key('dashboard-fav-line-${station.id}'),
-      style: const TextStyle(fontSize: 12, color: _grey),
+      style: const TextStyle(fontSize: 12, color: AppColors.kGrey),
     ),
     const SizedBox(width: 8),
     const Icon(Icons.directions_walk_rounded, size: 13, color: Color(0xFF9CA3AF)),
     const SizedBox(width: 3),
-    const Text('6 min', style: TextStyle(fontSize: 12, color: _grey)),
+    const Text('6 min', style: TextStyle(fontSize: 12, color: AppColors.kGrey)),
   ]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Subway Line Map
+  // ─────────────────────────────────────────────────────────────────────────
+
+  void _openLineMapFullscreen(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog.fullscreen(
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.asset(
+                'assets/images/subway-line-map.png',
+                fit: BoxFit.contain,
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+            Positioned(
+              top: 16, right: 16,
+              child: SafeArea(
+                child: InkWell(
+                  onTap: () => Navigator.of(context).pop(),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Colors.white, shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close_rounded, size: 20),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _subwayMap(BuildContext context) => InkWell(
+    onTap: () => _openLineMapFullscreen(context),
+    borderRadius: BorderRadius.circular(16),
+    child: Container(
+      decoration: _cardDecoration(),
+      clipBehavior: Clip.hardEdge,
+      child: Image.asset(
+        'assets/images/subway-line-map.png',
+        fit: BoxFit.contain,
+      ),
+    ),
+  );
 }
