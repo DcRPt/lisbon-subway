@@ -637,7 +637,6 @@ class _ListScreenState extends State<ListScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.kNavyBlue,
         elevation: 0,
-        automaticallyImplyLeading: false,
         title: const Text('Estações',
             style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
         actions: [

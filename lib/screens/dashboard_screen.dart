@@ -3,6 +3,9 @@ import 'package:cmproject/data/metro_repository.dart';
 import 'package:cmproject/models/station.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cmproject/screens/station_detail_screen.dart';
+
+import 'list_screen.dart';
 
 String _destinationName(String id) {
   if (id == '10') return 'Reboleira';
@@ -48,7 +51,7 @@ class DashboardScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _section('NETWORK STATUS', _networkGrid(context, lineDisrupted)),
+            _section('LINE STATUS', _networkGrid(context, lineDisrupted)),
             const SizedBox(height: 20),
             _section('NEAREST STATION', _stationCard(context, nearest)),
             const SizedBox(height: 20),
@@ -149,9 +152,9 @@ class DashboardScreen extends StatelessWidget {
     return InkWell(
       key: Key('dashboard-line-card-$lineName'),
       borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        // TODO: Navigator.push to ListScreen
-      },
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => const ListScreen(),
+      )),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: _cardDecoration(
@@ -222,9 +225,9 @@ class DashboardScreen extends StatelessWidget {
     return InkWell(
       key: const Key('dashboard-nearest-card'),
       borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        // TODO: Navigator.push to StationDetailScreen(station.id)
-      },
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => StationDetailScreen(station: station),
+      )),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: _cardDecoration(),
@@ -312,9 +315,9 @@ class DashboardScreen extends StatelessWidget {
       child: InkWell(
         key: Key('dashboard-fav-card-${station.id}'),
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          // TODO: Navigator.push to StationDetailScreen(station.id)
-        },
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => StationDetailScreen(station: station),
+        )),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: _cardDecoration(),
