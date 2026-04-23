@@ -198,6 +198,55 @@ void runDashboardTests() {
           reason: "A linha do favorito 's1' deveria ser 'Vermelha'",
         );
       });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // NAVIGATION
+  // ─────────────────────────────────────────────────────────────────────────
+
+  testWidgets('Dashboard - Clicar numa linha navega para a lista filtrada por essa linha',
+          (tester) async {
+        await _pump(tester, [
+          _station(id: 's1', lineName: 'Azul'),
+        ]);
+
+        await tester.tap(find.byKey(const Key('dashboard-line-card-Azul')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('list-screen')), findsOneWidget,
+            reason: "Depois de clicar numa linha deveria navegar para o ecrã da lista com a key 'list-screen'");
+      });
+
+  testWidgets('Dashboard - Clicar na estacao mais proxima navega para o detalhe',
+          (tester) async {
+        await _pump(tester, [
+          _station(id: 'MP', name: 'Marquês de Pombal', lineName: 'Azul'),
+        ]);
+
+        await tester.tap(find.byKey(const Key('dashboard-nearest-card')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('detail-screen')), findsOneWidget,
+            reason: "Depois de clicar na estação mais próxima deveria navegar para o ecrã de detalhe com a key 'detail-screen'");
+
+        expect(find.text('Marquês de Pombal'), findsAtLeastNWidgets(1),
+            reason: "O ecrã de detalhe deveria apresentar o nome da estação 'Marquês de Pombal'");
+      });
+
+  testWidgets('Dashboard - Clicar num favorito navega para o detalhe',
+          (tester) async {
+        await _pump(tester, [
+          _station(id: 's1', name: 'Oriente', lineName: 'Vermelha', isFavourite: true),
+        ]);
+
+        await tester.tap(find.byKey(const Key('dashboard-fav-card-s1')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('detail-screen')), findsOneWidget,
+            reason: "Depois de clicar num favorito deveria navegar para o ecrã de detalhe com a key 'detail-screen'");
+
+        expect(find.text('Oriente'), findsAtLeastNWidgets(1),
+            reason: "O ecrã de detalhe deveria apresentar o nome da estação 'Oriente'");
+      });
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
