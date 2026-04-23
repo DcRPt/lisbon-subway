@@ -61,20 +61,6 @@ Color _lineColor(String lineName) {
   return AppColors.kGrey;
 }
 
-Color _severityBg(double avg) {
-  if (avg == 0) return const Color(0xFFF2F0EB);
-  if (avg < 2) return const Color(0xFFEDF7E3);
-  if (avg < 4) return const Color(0xFFFFF8E1);
-  return const Color(0xFFFCEBEB);
-}
-
-Color _severityFg(double avg) {
-  if (avg == 0) return AppColors.kGrey;
-  if (avg < 2) return AppColors.kSuccessGreen;
-  if (avg < 4) return const Color(0xFFB36B00);
-  return const Color(0xFFA32D2D);
-}
-
 class _Filters {
   _SortBy sortBy = _SortBy.distance;
   bool noIncidentsOnly = false;
@@ -133,6 +119,14 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   List<Station> _filtered(List<Station> all) {
+    // no active filters on opening
+    if (_query.isEmpty &&
+        !_favoritesOnly &&
+        _selectedLine == null &&
+        _filters.activeCount == 0) {
+      return all;
+    }
+
     final results = all.where((s) {
       if (_query.isNotEmpty && !s.name.toLowerCase().contains(_query)) return false;
       if (_favoritesOnly && !s.isFavourite) return false;
@@ -312,8 +306,11 @@ class _ListScreenState extends State<ListScreen> {
                     final active = !draft.excludedTypes.contains(t);
                     return _sheetChip(t.displayName, active,
                         onTap: () => setSheet(() {
-                          if (active) draft.excludedTypes.add(t);
-                          else draft.excludedTypes.remove(t);
+                          if (active) {
+                            draft.excludedTypes.add(t);
+                          } else {
+                            draft.excludedTypes.remove(t);
+                          }
                         }));
                   }).toList(),
                 ),
@@ -412,7 +409,7 @@ class _ListScreenState extends State<ListScreen> {
                     fontSize: 14,
                     color: value ? AppColors.kNavyBlue : const Color(0xFF1A1A2E),
                     fontWeight: value ? FontWeight.w600 : FontWeight.w400))),
-        Switch(value: value, onChanged: onChanged, activeColor: AppColors.kNavyBlue),
+        Switch(value: value, onChanged: onChanged, activeThumbColor: AppColors.kNavyBlue),
       ]);
 
   Widget _searchBar() => TextField(
@@ -574,12 +571,13 @@ class _ListScreenState extends State<ListScreen> {
         builder: (_) => StationDetailScreen(station: station),
       )),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(                                      // ← plain Text for test finder
+      title: Text(
         station.name,
         style: const TextStyle(
             fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E)),
       ),
-      subtitle: Row(children: [                        // ← line + distance in subtitle
+      // line + distance in subtitle
+      subtitle: Row(children: [
         Container(
             width: 9, height: 9,
             decoration: BoxDecoration(
@@ -670,12 +668,14 @@ class _ListScreenState extends State<ListScreen> {
         ],
       ),
       body: SafeArea(
-        child: ListView.builder(                        // ← header inside ListView
+        // header inside ListView
+        child: ListView.builder(
           key: const Key('list-view'),
-          itemCount: filtered.length + 1,
+          itemCount: filtered.isEmpty ? 2 : filtered.length + 1,
           itemBuilder: (_, i) {
             if (i == 0) return _buildHeader(lines, hasDisruption);
-            return _stationTile(all[i - 1]);
+            if (filtered.isEmpty) return _emptyState();
+            return _stationTile(filtered[i - 1]);
           },
         ),
       ),
