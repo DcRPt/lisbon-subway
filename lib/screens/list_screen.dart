@@ -90,7 +90,8 @@ class _Filters {
 }
 
 class ListScreen extends StatefulWidget {
-  const ListScreen({super.key});
+  final String? initialLine;
+  const ListScreen({super.key, this.initialLine});
 
   @override
   State<ListScreen> createState() => _ListScreenState();
@@ -103,6 +104,14 @@ class _ListScreenState extends State<ListScreen> {
   String? _selectedLine;
   final _filters = _Filters();
   bool _favoritesOnly = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialLine != null) {
+      _selectedLine = widget.initialLine;
+    }
+  }
 
   @override
   void dispose() {
@@ -637,6 +646,12 @@ class _ListScreenState extends State<ListScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.kNavyBlue,
         elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: Navigator.canPop(context)
+            ? IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ) : null,
         title: const Text('Estações',
             style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
         actions: [

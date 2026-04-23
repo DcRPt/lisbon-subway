@@ -1,9 +1,9 @@
 import 'package:cmproject/data/app_colors.dart';
 import 'package:cmproject/data/metro_repository.dart';
 import 'package:cmproject/models/station.dart';
+import 'package:cmproject/screens/station_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cmproject/screens/station_detail_screen.dart';
 
 import 'list_screen.dart';
 
@@ -51,7 +51,7 @@ class DashboardScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _section('LINE STATUS', _networkGrid(context, lineDisrupted)),
+            _section('NETWORK STATUS', _networkGrid(context, lineDisrupted)),
             const SizedBox(height: 20),
             _section('NEAREST STATION', _stationCard(context, nearest)),
             const SizedBox(height: 20),
@@ -153,7 +153,7 @@ class DashboardScreen extends StatelessWidget {
       key: Key('dashboard-line-card-$lineName'),
       borderRadius: BorderRadius.circular(16),
       onTap: () => Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => const ListScreen(),
+        builder: (_) => ListScreen(initialLine: lineName),
       )),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
