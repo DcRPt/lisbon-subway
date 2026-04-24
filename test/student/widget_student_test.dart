@@ -1,25 +1,29 @@
+import 'package:cmproject/data/metro_repository.dart';
 import 'package:cmproject/models/incident_report.dart';
 import 'package:cmproject/models/station.dart';
 import 'package:cmproject/models/waiting_time.dart';
 import 'package:cmproject/screens/dashboard_screen.dart';
+import 'package:cmproject/screens/list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cmproject/data/metro_repository.dart';
 import 'package:provider/provider.dart';
 
 void main() {
   runDashboardTests();
+  runListFilterTests();
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DASHBOARD TESTS
+// ─────────────────────────────────────────────────────────────────────────────
 
 void runDashboardTests() {
 
-  // ─────────────────────────────────────────────────────────────────────────
   // NETWORK STATUS
-  // ─────────────────────────────────────────────────────────────────────────
 
   testWidgets('Dashboard - Apresenta uma linha por cada linha unica das estacoes',
           (tester) async {
-        await _pump(tester, [
+        await _pumpDashboard(tester, [
           _station(id: 's1', lineName: 'Azul'),
           _station(id: 's2', lineName: 'Verde'),
           _station(id: 's3', lineName: 'Azul'), // duplicate — should only show once
@@ -35,7 +39,7 @@ void runDashboardTests() {
 
   testWidgets('Dashboard - Linha sem incidentes recentes aparece como Normal',
           (tester) async {
-        await _pump(tester, [
+        await _pumpDashboard(tester, [
           _station(id: 's1', lineName: 'Azul', reports: [
             IncidentReport(
               timestamp: DateTime.now().subtract(const Duration(hours: 48)),
@@ -54,7 +58,7 @@ void runDashboardTests() {
 
   testWidgets('Dashboard - Linha com incidente recente aparece como Disrupted',
           (tester) async {
-        await _pump(tester, [
+        await _pumpDashboard(tester, [
           _station(id: 's1', lineName: 'Vermelha', reports: [
             IncidentReport(
               timestamp: DateTime.now().subtract(const Duration(hours: 2)),
@@ -71,13 +75,11 @@ void runDashboardTests() {
         );
       });
 
-  // ─────────────────────────────────────────────────────────────────────────
   // NEAREST STATION
-  // ─────────────────────────────────────────────────────────────────────────
 
   testWidgets('Dashboard - Apresenta mensagem quando nao ha estacoes',
           (tester) async {
-        await _pump(tester, []);
+        await _pumpDashboard(tester, []);
 
         expect(find.byKey(const Key('dashboard-nearest-empty')), findsOneWidget,
             reason: "Quando não existem estações deveria aparecer o widget 'dashboard-nearest-empty'");
@@ -87,7 +89,7 @@ void runDashboardTests() {
 
   testWidgets('Dashboard - Apresenta o nome da estacao mais proxima',
           (tester) async {
-        await _pump(tester, [
+        await _pumpDashboard(tester, [
           _station(id: 'MP', name: 'Marquês de Pombal', lineName: 'Azul'),
         ]);
 
@@ -102,7 +104,7 @@ void runDashboardTests() {
 
   testWidgets('Dashboard - Apresenta os destinos e tempos de chegada da estacao mais proxima',
           (tester) async {
-        await _pump(tester, [
+        await _pumpDashboard(tester, [
           _station(
             id: 'MP', name: 'Marquês de Pombal', lineName: 'Azul',
             waitingTimes: [
@@ -112,13 +114,11 @@ void runDashboardTests() {
           ),
         ]);
 
-        // Platform rows
         expect(find.byKey(const Key('dashboard-platform-row-0')), findsOneWidget,
             reason: "Deveria existir a linha de plataforma 0 com a key 'dashboard-platform-row-0'");
         expect(find.byKey(const Key('dashboard-platform-row-1')), findsOneWidget,
             reason: "Deveria existir a linha de plataforma 1 com a key 'dashboard-platform-row-1'");
 
-        // Destination names
         expect(
           tester.widget<Text>(find.byKey(const Key('dashboard-platform-dest-0'))).data,
           '→ Reboleira',
@@ -130,7 +130,6 @@ void runDashboardTests() {
           reason: "O destino 1 deveria ser '→ Santa Apolónia' para o id '20'",
         );
 
-        // Arrival times (180s = 3 min, 300s = 5 min)
         expect(
           find.descendant(
             of: find.byKey(const Key('dashboard-platform-chips-0')),
@@ -149,13 +148,11 @@ void runDashboardTests() {
         );
       });
 
-  // ─────────────────────────────────────────────────────────────────────────
   // FAVOURITES
-  // ─────────────────────────────────────────────────────────────────────────
 
   testWidgets('Dashboard - Apresenta mensagem quando nao ha favoritos',
           (tester) async {
-        await _pump(tester, [
+        await _pumpDashboard(tester, [
           _station(id: 's1', lineName: 'Azul', isFavourite: false),
         ]);
 
@@ -167,10 +164,10 @@ void runDashboardTests() {
 
   testWidgets('Dashboard - Apresenta apenas estacoes favoritas',
           (tester) async {
-        await _pump(tester, [
-          _station(id: 's1', name: 'Oriente',  lineName: 'Vermelha', isFavourite: true),
-          _station(id: 's2', name: 'Rossio',   lineName: 'Verde',    isFavourite: true),
-          _station(id: 's3', name: 'Alameda',  lineName: 'Verde',    isFavourite: false),
+        await _pumpDashboard(tester, [
+          _station(id: 's1', name: 'Oriente', lineName: 'Vermelha', isFavourite: true),
+          _station(id: 's2', name: 'Rossio',  lineName: 'Verde',    isFavourite: true),
+          _station(id: 's3', name: 'Alameda', lineName: 'Verde',    isFavourite: false),
         ]);
 
         expect(find.byKey(const Key('dashboard-fav-card-s1')), findsOneWidget,
@@ -183,7 +180,7 @@ void runDashboardTests() {
 
   testWidgets('Dashboard - Card do favorito apresenta nome e linha',
           (tester) async {
-        await _pump(tester, [
+        await _pumpDashboard(tester, [
           _station(id: 's1', name: 'Oriente', lineName: 'Vermelha', isFavourite: true),
         ]);
 
@@ -199,13 +196,11 @@ void runDashboardTests() {
         );
       });
 
-  // ─────────────────────────────────────────────────────────────────────────
   // NAVIGATION
-  // ─────────────────────────────────────────────────────────────────────────
 
   testWidgets('Dashboard - Clicar numa linha navega para a lista filtrada por essa linha',
           (tester) async {
-        await _pump(tester, [
+        await _pumpDashboard(tester, [
           _station(id: 's1', lineName: 'Azul'),
         ]);
 
@@ -218,7 +213,7 @@ void runDashboardTests() {
 
   testWidgets('Dashboard - Clicar na estacao mais proxima navega para o detalhe',
           (tester) async {
-        await _pump(tester, [
+        await _pumpDashboard(tester, [
           _station(id: 'MP', name: 'Marquês de Pombal', lineName: 'Azul'),
         ]);
 
@@ -227,14 +222,13 @@ void runDashboardTests() {
 
         expect(find.byKey(const Key('detail-screen')), findsOneWidget,
             reason: "Depois de clicar na estação mais próxima deveria navegar para o ecrã de detalhe com a key 'detail-screen'");
-
         expect(find.text('Marquês de Pombal'), findsAtLeastNWidgets(1),
             reason: "O ecrã de detalhe deveria apresentar o nome da estação 'Marquês de Pombal'");
       });
 
   testWidgets('Dashboard - Clicar num favorito navega para o detalhe',
           (tester) async {
-        await _pump(tester, [
+        await _pumpDashboard(tester, [
           _station(id: 's1', name: 'Oriente', lineName: 'Vermelha', isFavourite: true),
         ]);
 
@@ -243,13 +237,279 @@ void runDashboardTests() {
 
         expect(find.byKey(const Key('detail-screen')), findsOneWidget,
             reason: "Depois de clicar num favorito deveria navegar para o ecrã de detalhe com a key 'detail-screen'");
-
         expect(find.text('Oriente'), findsAtLeastNWidgets(1),
             reason: "O ecrã de detalhe deveria apresentar o nome da estação 'Oriente'");
       });
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// LIST FILTER TESTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+void runListFilterTests() {
+
+  // INITIAL STATE
+
+  testWidgets('Lista - Apresenta todas as estacoes por defeito',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio',  lineName: 'Verde'),
+          _station(id: 's2', name: 'Oriente', lineName: 'Vermelha'),
+          _station(id: 's3', name: 'Alameda', lineName: 'Azul'),
+        ]);
+
+        expect(find.byKey(const Key('list-station-tile-s1')), findsOneWidget,
+            reason: "Por defeito todas as estações deveriam ser visíveis");
+        expect(find.byKey(const Key('list-station-tile-s2')), findsOneWidget);
+        expect(find.byKey(const Key('list-station-tile-s3')), findsOneWidget);
+      });
+
+  testWidgets('Lista - Abre com linha pre-selecionada quando initialLine e fornecido',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio',  lineName: 'Verde'),
+          _station(id: 's2', name: 'Oriente', lineName: 'Vermelha'),
+        ], initialLine: 'Verde');
+
+        expect(find.byKey(const Key('list-station-tile-s1')), findsOneWidget,
+            reason: "Com initialLine='Verde' só as estações da linha Verde devem aparecer");
+        expect(find.byKey(const Key('list-station-tile-s2')), findsNothing,
+            reason: "Estações de outras linhas não devem aparecer quando initialLine está definido");
+      });
+
+  // SEARCH
+
+  testWidgets('Lista - Pesquisa filtra estacoes por nome',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio',  lineName: 'Verde'),
+          _station(id: 's2', name: 'Oriente', lineName: 'Vermelha'),
+        ]);
+
+        await tester.enterText(find.byType(TextField), 'ross');
+        await tester.pumpAndSettle(const Duration(milliseconds: 400));
+
+        expect(find.byKey(const Key('list-station-tile-s1')), findsOneWidget,
+            reason: "Estação 'Rossio' deveria aparecer ao pesquisar 'ross'");
+        expect(find.byKey(const Key('list-station-tile-s2')), findsNothing,
+            reason: "Estação 'Oriente' não deveria aparecer ao pesquisar 'ross'");
+      });
+
+  testWidgets('Lista - Pesquisa vazia mostra todas as estacoes',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio',  lineName: 'Verde'),
+          _station(id: 's2', name: 'Oriente', lineName: 'Vermelha'),
+        ]);
+
+        await tester.enterText(find.byType(TextField), 'ross');
+        await tester.pumpAndSettle(const Duration(milliseconds: 400));
+        await tester.enterText(find.byType(TextField), '');
+        await tester.pumpAndSettle(const Duration(milliseconds: 400));
+
+        expect(find.byKey(const Key('list-station-tile-s1')), findsOneWidget);
+        expect(find.byKey(const Key('list-station-tile-s2')), findsOneWidget);
+      });
+
+  // LINE CHIPS
+
+  testWidgets('Lista - Filtro por linha mostra apenas estacoes dessa linha',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio',  lineName: 'Verde'),
+          _station(id: 's2', name: 'Oriente', lineName: 'Vermelha'),
+          _station(id: 's3', name: 'Alameda', lineName: 'Verde'),
+        ]);
+
+        await tester.tap(find.byKey(const Key('list-line-chip-Verde')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('list-station-tile-s1')), findsOneWidget,
+            reason: "Estações da linha Verde devem aparecer");
+        expect(find.byKey(const Key('list-station-tile-s3')), findsOneWidget,
+            reason: "Estações da linha Verde devem aparecer");
+        expect(find.byKey(const Key('list-station-tile-s2')), findsNothing,
+            reason: "Estações de outras linhas não devem aparecer");
+      });
+
+  testWidgets('Lista - Chip Todas remove o filtro de linha',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio',  lineName: 'Verde'),
+          _station(id: 's2', name: 'Oriente', lineName: 'Vermelha'),
+        ]);
+
+        await tester.tap(find.byKey(const Key('list-line-chip-Verde')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('list-line-chip-all')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('list-station-tile-s1')), findsOneWidget);
+        expect(find.byKey(const Key('list-station-tile-s2')), findsOneWidget);
+      });
+
+  // FAVOURITES TAB
+
+  testWidgets('Lista - Tab favoritos mostra apenas estacoes favoritas',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio',  lineName: 'Verde',    isFavourite: true),
+          _station(id: 's2', name: 'Oriente', lineName: 'Vermelha', isFavourite: false),
+        ]);
+
+        await tester.tap(find.byKey(const Key('list-tab-favourites')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('list-station-tile-s1')), findsOneWidget,
+            reason: "Estação favorita deve aparecer no tab de favoritos");
+        expect(find.byKey(const Key('list-station-tile-s2')), findsNothing,
+            reason: "Estação não favorita não deve aparecer no tab de favoritos");
+      });
+
+  testWidgets('Lista - Tab todos volta a mostrar todas as estacoes',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio',  lineName: 'Verde',    isFavourite: true),
+          _station(id: 's2', name: 'Oriente', lineName: 'Vermelha', isFavourite: false),
+        ]);
+
+        await tester.tap(find.byKey(const Key('list-tab-favourites')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('list-tab-all')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('list-station-tile-s1')), findsOneWidget);
+        expect(find.byKey(const Key('list-station-tile-s2')), findsOneWidget);
+      });
+
+  // FILTER SHEET — NO INCIDENTS
+
+  testWidgets('Lista - Filtro sem incidentes esconde estacoes com incidentes',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio',  lineName: 'Verde'),
+          _station(id: 's2', name: 'Oriente', lineName: 'Vermelha', reports: [
+            IncidentReport(
+              timestamp: DateTime.now(),
+              rate: 3, type: IncidentType.Elevator,
+            ),
+          ]),
+        ]);
+
+        await tester.tap(find.byKey(const Key('list-filter-button')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('list-filter-no-incidents-switch')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const Key('list-filter-apply')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('list-filter-apply')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('list-station-tile-s1')), findsOneWidget,
+            reason: "Estação sem incidentes deve aparecer");
+        expect(find.byKey(const Key('list-station-tile-s2')), findsNothing,
+            reason: "Estação com incidentes não deve aparecer com filtro ativo");
+      });
+
+  // FILTER SHEET — SORT
+
+  testWidgets('Lista - Ordenar por nome ordena estacoes alfabeticamente',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio',  lineName: 'Verde'),
+          _station(id: 's2', name: 'Alameda', lineName: 'Vermelha'),
+          _station(id: 's3', name: 'Oriente', lineName: 'Azul'),
+        ]);
+
+        await tester.tap(find.byKey(const Key('list-filter-button')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('list-sort-chip-name')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const Key('list-filter-apply')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('list-filter-apply')));
+        await tester.pumpAndSettle();
+
+        final tiles = tester.widgetList<ListTile>(
+          find.descendant(
+            of: find.byKey(const Key('list-view')),
+            matching: find.byType(ListTile),
+          ),
+        ).toList();
+
+        expect(
+          (tiles[0].key as ValueKey).value, 'list-station-tile-s2',
+          reason: "Alameda deveria ser a primeira estação ordenada por nome",
+        );
+        expect(
+          (tiles[1].key as ValueKey).value, 'list-station-tile-s3',
+          reason: "Oriente deveria ser a segunda estação ordenada por nome",
+        );
+        expect(
+          (tiles[2].key as ValueKey).value, 'list-station-tile-s1',
+          reason: "Rossio deveria ser a terceira estação ordenada por nome",
+        );
+      });
+
+  // FILTER SHEET — CLEAR
+
+  testWidgets('Lista - Limpar filtros volta ao estado inicial',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio',  lineName: 'Verde'),
+          _station(id: 's2', name: 'Oriente', lineName: 'Vermelha', reports: [
+            IncidentReport(
+              timestamp: DateTime.now(),
+              rate: 3, type: IncidentType.Elevator,
+            ),
+          ]),
+        ]);
+
+        await tester.tap(find.byKey(const Key('list-filter-button')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('list-filter-no-incidents-switch')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const Key('list-filter-apply')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('list-filter-apply')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('list-station-tile-s2')), findsNothing);
+
+        await tester.tap(find.byKey(const Key('list-filter-button')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('list-filter-clear')));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.byKey(const Key('list-filter-apply')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('list-filter-apply')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('list-station-tile-s1')), findsOneWidget);
+        expect(find.byKey(const Key('list-station-tile-s2')), findsOneWidget,
+            reason: "Após limpar filtros todas as estações devem aparecer novamente");
+      });
+
+  // EMPTY STATE
+
+  testWidgets('Lista - Mostra estado vazio quando nenhuma estacao corresponde',
+          (tester) async {
+        await _pumpList(tester, [
+          _station(id: 's1', name: 'Rossio', lineName: 'Verde'),
+        ]);
+
+        await tester.enterText(find.byType(TextField), 'xxxxxxxxxxx');
+        await tester.pumpAndSettle(const Duration(milliseconds: 400));
+
+        expect(find.text('Nenhuma estação encontrada'), findsOneWidget,
+            reason: "Deveria aparecer mensagem de estado vazio quando não há resultados");
+        expect(find.byKey(const Key('list-station-tile-s1')), findsNothing);
+      });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
 
 Station _station({
   required String id,
@@ -267,7 +527,7 @@ Station _station({
   waitingTimes: waitingTimes,
 );
 
-Future<void> _pump(WidgetTester tester, List<Station> stations) async {
+Future<void> _pumpDashboard(WidgetTester tester, List<Station> stations) async {
   final repo = MetroRepository();
   for (final s in stations) {
     repo.insertStation(s);
@@ -277,6 +537,22 @@ Future<void> _pump(WidgetTester tester, List<Station> stations) async {
     Provider<MetroRepository>.value(
       value: repo,
       child: const MaterialApp(home: DashboardScreen()),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpList(WidgetTester tester, List<Station> stations,
+    {String? initialLine}) async {
+  final repo = MetroRepository();
+  for (final s in stations) {
+    repo.insertStation(s);
+  }
+
+  await tester.pumpWidget(
+    Provider<MetroRepository>.value(
+      value: repo,
+      child: MaterialApp(home: ListScreen(initialLine: initialLine)),
     ),
   );
   await tester.pumpAndSettle();
