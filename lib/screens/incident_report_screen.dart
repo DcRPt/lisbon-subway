@@ -8,7 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:testable_form_field/testable_form_field.dart';
 
 class IncidentReportScreen extends StatefulWidget {
-  const IncidentReportScreen({super.key});
+  final Station? preselectedStation;
+  const IncidentReportScreen({super.key, this.preselectedStation});
 
   @override
   State<IncidentReportScreen> createState() => _IncidentReportScreenState();
@@ -22,6 +23,12 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
   int? _severity;
   DateTime? _dateTime;
   String? _notes;
+
+  @override
+  void initState() {
+    super.initState();
+    _station = widget.preselectedStation;
+  }
 
   Future<void> _pickDateTime(Function(DateTime?) onPicked) async {
     final now = DateTime.now();
@@ -117,7 +124,11 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.kNavyBlue,
         elevation: 0,
-        automaticallyImplyLeading: false,
+        leading: Navigator.canPop(context)
+            ? IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ) : null,
         title: const Text('Reportar incidente',
             style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
       ),

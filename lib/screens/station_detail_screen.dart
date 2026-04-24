@@ -1,38 +1,43 @@
 import 'package:cmproject/models/station.dart';
+import 'package:cmproject/data/app_colors.dart';
+import 'package:cmproject/screens/incident_report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-// ── Cores (mesmas da ListScreen) ──────────────────────────────────────────────
-const _navy       = Color(0xFF003087);
-const _warmWhite  = Color(0xFFFAFAF8);
-const _warmSurface = Color(0xFFF2F0EB);
-const _nearBlack  = Color(0xFF1A1A2E);
-const _muted      = Color(0xFF6B6B7A);
-const _borderDefault = Color(0xFFD8D6CF);
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 Color _lineColor(String lineName) {
   final l = lineName.toLowerCase();
-  if (l.contains('azul')  || l.contains('blue'))   return const Color(0xFF0057A8);
-  if (l.contains('amar')  || l.contains('yellow'))  return const Color(0xFFF5A800);
-  if (l.contains('verd')  || l.contains('green'))   return const Color(0xFF00A89D);
-  if (l.contains('verm')  || l.contains('red'))     return const Color(0xFFEE1D23);
-  if (l.contains('rosa')  || l.contains('pink'))    return const Color(0xFFE91E8C);
-  if (l.contains('cast')  || l.contains('brown'))   return const Color(0xFF795548);
-  return _muted;
+  for (final entry in AppColors.kLineColors.entries) {
+    if (l.contains(entry.key)) return entry.value;
+  }
+  return AppColors.kGrey;
 }
 
 Color _severityBg(double avg) {
-  if (avg == 0) return _warmSurface;
-  if (avg < 2)  return const Color(0xFFEDF7E3);
-  if (avg < 4)  return const Color(0xFFFFF8E1);
-  return const Color(0xFFFCEBEB);
+  if (avg == 0) return AppColors.kFieldBg;
+  if (avg < 2)  return AppColors.kSuccessGreen.withValues(alpha: 0.12);
+  if (avg < 4)  return AppColors.kYellow.withValues(alpha: 0.12);
+  return AppColors.kErrorRed.withValues(alpha: 0.12);
 }
 
 Color _severityFg(double avg) {
-  if (avg == 0) return _muted;
-  if (avg < 2)  return const Color(0xFF2E7D6B);
-  if (avg < 4)  return const Color(0xFFB36B00);
-  return const Color(0xFFA32D2D);
+  if (avg == 0) return AppColors.kGrey;
+  if (avg < 2)  return AppColors.kSuccessGreen;
+  if (avg < 4)  return AppColors.kYellow;
+  return AppColors.kErrorRed;
+}
+
+Color _severityDotBg(int rate) {
+  if (rate >= 4) return AppColors.kErrorRed.withValues(alpha: 0.12);
+  if (rate >= 2) return AppColors.kYellow.withValues(alpha: 0.12);
+  return AppColors.kSuccessGreen.withValues(alpha: 0.12);
+}
+
+Color _severityDotFg(int rate) {
+  if (rate >= 4) return AppColors.kErrorRed;
+  if (rate >= 2) return AppColors.kYellow;
+  return AppColors.kSuccessGreen;
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -45,36 +50,44 @@ class StationDetailScreen extends StatelessWidget {
     final reports = List.from(station.reports)
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-    final avg = station.averageRating;
+    final avg      = station.averageRating;
     final fullLine = station.lineName.toLowerCase().startsWith('linha')
         ? station.lineName
         : 'Linha ${station.lineName}';
 
     return Scaffold(
       key: const Key('detail-screen'),
-      backgroundColor: _warmWhite,
+      backgroundColor: const Color(0xFFFAFAF8),
       appBar: AppBar(
-        backgroundColor: _navy,
+        backgroundColor: AppColors.kNavyBlue,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(station.name,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white)),
+            Text(
+              station.name,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 2),
             Row(children: [
               Container(
-                width: 8, height: 8,
+                width: 8,
+                height: 8,
                 decoration: BoxDecoration(
-                    color: _lineColor(station.lineName),
-                    shape: BoxShape.circle),
+                  color: _lineColor(station.lineName),
+                  shape: BoxShape.circle,
+                ),
               ),
               const SizedBox(width: 5),
-              Text(fullLine,
-                  style: const TextStyle(fontSize: 11, color: Colors.white70)),
+              Text(
+                fullLine,
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
+              ),
             ]),
           ],
         ),
@@ -83,163 +96,293 @@ class StationDetailScreen extends StatelessWidget {
         child: ListView(
           key: const Key('detail-screen-incidents-list'),
           children: [
-            // ── Info card ────────────────────────────────────────────────
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _borderDefault),
-              ),
+
+            // ── Metrics row ───────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Row(children: [
-                // Linha badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _lineColor(station.lineName).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Container(
-                        width: 10, height: 10,
-                        decoration: BoxDecoration(
-                            color: _lineColor(station.lineName),
-                            shape: BoxShape.circle)),
-                    const SizedBox(height: 4),
-                    Text(
-                      station.lineName.replaceAll(
-                          RegExp(r'linha\s*', caseSensitive: false), ''),
-                      style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: _lineColor(station.lineName)),
-                    ),
-                  ]),
-                ),
-                const SizedBox(width: 14),
-                // Métricas
+                // Incident count
                 Expanded(
-                  child: Row(children: [
-                    _metric(Icons.warning_amber_rounded,
-                        '${station.reports.length}', 'incidentes'),
-                    const SizedBox(width: 16),
-                    if (avg > 0)
-                      _metric(Icons.bar_chart_rounded,
-                          avg.toStringAsFixed(1), 'severidade',
-                          valueColor: _severityFg(avg),
-                          bg: _severityBg(avg)),
-                  ]),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.kFieldBg,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.kFieldBorder),
+                    ),
+                    child: Row(children: [
+                      Text(
+                        '${station.reports.length}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A2E),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'incidentes\nreportados',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.kFieldText,
+                          height: 1.3,
+                        ),
+                      ),
+                    ]),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Avg severity card
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: avg == 0
+                          ? AppColors.kSuccessGreen.withValues(alpha: 0.12)
+                          : _severityBg(avg),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: avg == 0
+                            ? AppColors.kSuccessGreen.withValues(alpha: 0.4)
+                            : _severityFg(avg).withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: avg == 0
+                        ? Row(children: [
+                      Icon(Icons.check_rounded,
+                          size: 20, color: AppColors.kSuccessGreen),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Sem\nocorrências',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.kSuccessGreen,
+                          height: 1.3,
+                        ),
+                      ),
+                    ])
+                        : Row(children: [
+                      Text(
+                        avg.toStringAsFixed(1),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: _severityFg(avg),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'severidade\nmédia',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.kFieldText,
+                          height: 1.3,
+                        ),
+                      ),
+                    ]),
+                  ),
                 ),
               ]),
             ),
 
-            // ── Section header ────────────────────────────────────────────
+            // ── Section header with report button ─────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Text('Incidentes reportados',
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: _nearBlack)),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              child: Row(
+                children: [
+                  const Text(
+                    'INCIDENTES REPORTADOS',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.6,
+                      color: Color(0xFF6B6B7A),
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => IncidentReportScreen(
+                            preselectedStation: station,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.kFieldBg,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.kFieldBorder),
+                      ),
+                      child: const Text(
+                        '+ Reportar',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.kNavyBlue,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            Container(height: 1, color: _borderDefault),
 
-            // ── Incident list ─────────────────────────────────────────────
+            // ── Incident list or empty state ──────────────────────────────
             if (reports.isEmpty)
               Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(mainAxisSize: MainAxisSize.min, children: const [
-                  Icon(Icons.check_circle_outline, size: 40, color: _muted),
-                  SizedBox(height: 10),
-                  Text('Sem incidentes reportados',
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.kFieldBg,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.check_circle_outline_rounded,
+                        size: 24,
+                        color: AppColors.kGrey,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Sem incidentes reportados',
                       style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: _nearBlack)),
-                  SizedBox(height: 4),
-                  Text('Esta estação não tem ocorrências registadas.',
-                      style: TextStyle(fontSize: 13, color: _muted),
-                      textAlign: TextAlign.center),
-                ]),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A2E),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Esta estação não tem ocorrências registadas.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.kFieldText,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               )
             else
               ...reports.asMap().entries.map((entry) {
-                final i = entry.key;
+                final i      = entry.key;
                 final report = entry.value;
+                final isLast = i == reports.length - 1;
                 final formattedDate =
                 DateFormat('dd/MM/yyyy HH:mm').format(report.timestamp);
-                final isLast = i == reports.length - 1;
+
+                final rate = report.rate;
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ListTile(
-                      contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      title: Text(formattedDate,
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: _nearBlack)),
-                      subtitle: report.notes != null
-                          ? Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Text(report.notes!,
-                            style: const TextStyle(
-                                fontSize: 12, color: _muted)),
-                      )
-                          : null,
-                      trailing: report.type != null
-                          ? Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _warmSurface,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: _borderDefault),
-                        ),
-                        child: Text(report.type!.displayName,
-                            style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: _muted)),
-                      )
-                          : null,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Description first — larger, bold
+                                if (report.notes != null)
+                                  Text(
+                                    report.notes!,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1A1A2E),
+                                    ),
+                                  ),
+                                const SizedBox(height: 3),
+                                // Date below — smaller, grey
+                                Text(
+                                  formattedDate,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.kFieldText,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                // Type pill
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.kFieldBg,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                        color: AppColors.kFieldBorder),
+                                  ),
+                                  child: Text(
+                                    report.type.displayName,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.kFieldText,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          // Severity dot using report.rate
+                          Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              color: _severityDotBg(rate),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: _severityDotFg(rate)
+                                    .withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '$rate',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: _severityDotFg(rate),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     if (!isLast)
-                      Divider(height: 1, color: _borderDefault, indent: 16, endIndent: 16),
+                      Divider(
+                        height: 1,
+                        color: AppColors.kFieldBorder,
+                        indent: 16,
+                        endIndent: 16,
+                      ),
                   ],
                 );
               }),
-            const SizedBox(height: 24),
+
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
-
-  Widget _metric(IconData icon, String value, String label,
-      {Color? valueColor, Color? bg}) =>
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: bg ?? _warmSurface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: _borderDefault),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 13, color: valueColor ?? _muted),
-          const SizedBox(width: 5),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(value,
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: valueColor ?? _nearBlack)),
-            Text(label,
-                style: const TextStyle(fontSize: 9, color: _muted)),
-          ]),
-        ]),
-      );
 }
