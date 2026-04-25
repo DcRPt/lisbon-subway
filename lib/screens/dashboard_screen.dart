@@ -51,14 +51,14 @@ class DashboardScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _section('NETWORK STATUS', _networkGrid(context, lineDisrupted)),
+            _section('ESTADO DA LINHA', _networkGrid(context, lineDisrupted)),
             const SizedBox(height: 20),
-            _section('NEAREST STATION', _stationCard(context, nearest)),
+            _section('ESTAÇÃO MAIS PRÓXIMA', _stationCard(context, nearest)),
             const SizedBox(height: 20),
-            _section('FAVOURITES', _favList(context, favourites),
+            _section('FAVORITOS', _favList(context, favourites),
                 icon: Icons.star_rounded),
             const SizedBox(height: 20),
-            _section('NETWORK MAP', _subwayMap(context),
+            _section('MAPA DO METRO', _subwayMap(context),
                 icon: Icons.map_rounded),
           ],
         ),
