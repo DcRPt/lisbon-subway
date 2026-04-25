@@ -4,6 +4,7 @@ import 'package:cmproject/models/station.dart';
 import 'package:cmproject/screens/station_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math';
 
 import 'list_screen.dart';
 
@@ -15,6 +16,23 @@ String _destinationName(String id) {
 
 Color _colorForLine(String lineName) =>
     AppColors.kLineColors[lineName.toLowerCase()] ?? AppColors.kGrey;
+
+const _mockUserLat = 38.7169;
+const _mockUserLng = -9.1399;
+
+double _distanceKm(double? lat, double? lng) {
+  if (lat == null || lng == null) return double.maxFinite;
+  const r = 6371.0;
+  final dLat = (lat - _mockUserLat) * pi / 180;
+  final dLng = (lng - _mockUserLng) * pi / 180;
+  final a = sin(dLat / 2) * sin(dLat / 2) +
+      cos(_mockUserLat * pi / 180) * cos(lat * pi / 180) *
+          sin(dLng / 2) * sin(dLng / 2);
+  return r * 2 * atan2(sqrt(a), sqrt(1 - a));
+}
+
+String _formatDistance(double km) =>
+    km < 1 ? '${(km * 1000).round()} m' : '${km.toStringAsFixed(1)} km';
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 class DashboardScreen extends StatelessWidget {
@@ -310,6 +328,23 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _favCard(BuildContext context, Station station) {
     final color = _colorForLine(station.lineName);
+    final avg = station.averageRating;
+    final hasIncidents = station.reports.isNotEmpty;
+
+    Color severityBg() {
+      if (!hasIncidents) return Colors.transparent;
+      if (avg < 2) return AppColors.kSuccessGreen.withValues(alpha: 0.12);
+      if (avg < 4) return AppColors.kYellow.withValues(alpha: 0.12);
+      return AppColors.kErrorRed.withValues(alpha: 0.12);
+    }
+
+    Color severityFg() {
+      if (!hasIncidents) return AppColors.kGrey;
+      if (avg < 2) return AppColors.kSuccessGreen;
+      if (avg < 4) return AppColors.kYellow;
+      return AppColors.kErrorRed;
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: InkWell(
@@ -332,7 +367,32 @@ class DashboardScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
+            // severity badge
+            if (hasIncidents) ...[
+              Container(
+                width: 28,
+                height: 28,
+                margin: const EdgeInsets.only(right: 6),
+                decoration: BoxDecoration(
+                  color: severityBg(),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: severityFg().withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    avg.toStringAsFixed(1),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: severityFg(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
             _navArrow(),
           ]),
         ),
@@ -351,18 +411,28 @@ class DashboardScreen extends StatelessWidget {
     ],
   ]);
 
-  Widget _favDetails(Station station, Color color) => Row(children: [
-    _dot(color, size: 8),
-    const SizedBox(width: 5),
-    Text(station.lineName,
-      key: Key('dashboard-fav-line-${station.id}'),
-      style: const TextStyle(fontSize: 12, color: AppColors.kGrey),
-    ),
-    const SizedBox(width: 8),
-    const Icon(Icons.directions_walk_rounded, size: 13, color: Color(0xFF9CA3AF)),
-    const SizedBox(width: 3),
-    const Text('6 min', style: TextStyle(fontSize: 12, color: AppColors.kGrey)),
-  ]);
+  Widget _favDetails(Station station, Color color) {
+    final distance = _distanceKm(station.latitude, station.longitude);
+
+    return Row(children: [
+      _dot(color, size: 8),
+      const SizedBox(width: 5),
+      Text(
+        station.lineName,
+        key: Key('dashboard-fav-line-${station.id}'),
+        style: const TextStyle(fontSize: 12, color: AppColors.kGrey),
+      ),
+      const SizedBox(width: 8),
+      const Text('·', style: TextStyle(fontSize: 12, color: AppColors.kGrey)),
+      const SizedBox(width: 8),
+      const Icon(Icons.near_me_outlined, size: 11, color: Color(0xFF9CA3AF)),
+      const SizedBox(width: 3),
+      Text(
+        _formatDistance(distance),
+        style: const TextStyle(fontSize: 12, color: AppColors.kGrey),
+      ),
+    ]);
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Subway Line Map
