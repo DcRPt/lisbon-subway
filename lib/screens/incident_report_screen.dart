@@ -116,11 +116,17 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
   @override
   Widget build(BuildContext context) {
     final stations = context.read<MetroRepository>().getAllStations();
-    const ramp = [AppColors.kSuccessGreen, Color(0xFF5A9E3A), Color(0xFFF5A800), Color(0xFFB36B00), AppColors.kErrorRed];
+    const ramp = [
+      AppColors.kSuccessGreen,
+      AppColors.kSuccessGreen,
+      AppColors.kYellow,
+      AppColors.kYellow,
+      AppColors.kErrorRed,
+    ];
 
     return Scaffold(
       key: const Key('incidents-report-screen'),
-      backgroundColor: const Color(0xFFFAFAF8),
+      backgroundColor: AppColors.kFieldBg,
       appBar: AppBar(
         backgroundColor: AppColors.kNavyBlue,
         elevation: 0,
@@ -241,7 +247,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                   contentPadding: EdgeInsets.zero,
                   title: Text(
                     _dateTime != null ? DateFormat('dd/MM/yyyy HH:mm').format(_dateTime!) : 'Selecione a data e hora',
-                    style: TextStyle(fontSize: 14, color: _dateTime != null ? const Color(0xFF1A1A2E) : AppColors.kFieldText),
+                    style: TextStyle(fontSize: 14, color: _dateTime != null ? AppColors.kNavyBlue : AppColors.kFieldText),
                   ),
                   trailing: const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.kFieldText),
                   onTap: () => _pickDateTime(field.didChange),
