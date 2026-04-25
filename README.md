@@ -17,13 +17,9 @@ a22207476;Guilherme Ribeiro
 |-------|---------|
 | ![lista](images/lista.png) | ![filtro](images/filtro.png) |
 
-| Detalhes |
-|----------|
-| ![detalhes](images/detalhes.png) |
-
-| Mapa |
-|------|
-| ![mapa](images/mapa.png) |
+| Detalhes | Mapa |
+|----------|------|
+| ![detalhes](images/detalhes.png) | ![mapa](images/mapa.png) |
 
 | Formulário |
 |------------|
