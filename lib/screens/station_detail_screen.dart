@@ -14,6 +14,16 @@ Color _lineColor(String lineName) {
   return AppColors.kGrey;
 }
 
+String _destinationName(String id) {
+  if (id == '10') return 'Reboleira';
+  if (id == '20') return 'Santa Apolónia';
+  if (id == '30') return 'Cais do Sodré';
+  if (id == '40') return 'Telheiras';
+  if (id == '60') return 'Aeroporto';
+  if (id == '38') return 'S. Sebastião';
+  return id;
+}
+
 Color _severityBg(double avg) {
   if (avg == 0) return AppColors.kFieldBg;
   if (avg < 2)  return AppColors.kSuccessGreen.withValues(alpha: 0.12);
@@ -186,6 +196,142 @@ class StationDetailScreen extends StatelessWidget {
                 ),
               ]),
             ),
+
+            // ── Waiting times ─────────────────────────────────────────────
+            if (station.waitingTimes.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'PRÓXIMAS PARTIDAS',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.6,
+                        color: Color(0xFF6B6B7A),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.kFieldBorder),
+                      ),
+                      child: Column(
+                        children: station.waitingTimes.asMap().entries.map((entry) {
+                          final index  = entry.key;
+                          final wt     = entry.value;
+                          final isLast = index == station.waitingTimes.length - 1;
+
+                          return Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Plataforma ${index + 1}',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: AppColors.kFieldText,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(children: [
+                                            Container(
+                                              width: 3,
+                                              height: 14,
+                                              decoration: BoxDecoration(
+                                                color: _lineColor(
+                                                    station.lineName),
+                                                borderRadius:
+                                                BorderRadius.circular(2),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              '→ ${_destinationName(wt.destinationId)}',
+                                              style: const TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFF1A1A2E),
+                                              ),
+                                            ),
+                                          ]),
+                                        ],
+                                      ),
+                                    ),
+                                    Row(
+                                      children: wt.arrivalsMinutes
+                                          .map((m) => Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 6),
+                                        child: Container(
+                                          width: 40,
+                                          padding:
+                                          const EdgeInsets.symmetric(
+                                              vertical: 7),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.kFieldBg,
+                                            borderRadius:
+                                            BorderRadius.circular(8),
+                                          ),
+                                          child: Column(
+                                            mainAxisSize:
+                                            MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                '$m',
+                                                style: const TextStyle(
+                                                  fontWeight:
+                                                  FontWeight.w700,
+                                                  fontSize: 14,
+                                                  color:
+                                                  Color(0xFF111827),
+                                                ),
+                                              ),
+                                              Text(
+                                                'min',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: AppColors
+                                                      .kFieldText,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ))
+                                          .toList(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (!isLast)
+                                Divider(
+                                  height: 1,
+                                  color: AppColors.kFieldBorder,
+                                  indent: 14,
+                                  endIndent: 14,
+                                ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             // ── Section header with report button ─────────────────────────
             Padding(
