@@ -11,19 +11,19 @@ a22207476;Guilherme Ribeiro
 
 * Dashboard
   * *Ecrã dashboard com informações pertinentes, estação mais proxima, status das linhas, favoritos e o mapa das linhas.
-  * ![Dashboard 1](images/dashboard1.png) ![Dashboard 2](images/dashboard2.png)
+  ![Dashboard 1](images/dashboard1.png) ![Dashboard 2](images/dashboard2.png)
 * Lista
   * Lista de estações de metro, com barra de pesquisa, toggle de favoritos e filtros adicionais.
-  * ![Listagem estações](images/lista.png)![filtro.png](images/filtro.png)
+  ![Listagem estações](images/lista.png)![filtro.png](images/filtro.png)
 * Detalhes de Estação
   * Numero e lista de incidentes reportados e a severidade.
-  * ![Detalhes estação](images/detalhes.png)
+  ![Detalhes estação](images/detalhes.png)
 * Mapa
   * Mapa da localização do utilizador com os metros proximos apresentados.
-  * ![Mapa.png](images/mapa.png)
+  ![Mapa.png](images/mapa.png)
 * Formulário de Incidente
   * Formulário para preencher um novo incidente, escolher estação, tipo de problema, gravidade, data / hora e notas sobre o incidente.
-  * ![Formulário.png](images/formulario.png)
+  ![Formulário.png](images/formulario.png)
 
 ## Funcionalidades implementadas
 
