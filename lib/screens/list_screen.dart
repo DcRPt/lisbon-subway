@@ -606,6 +606,22 @@ class _ListScreenState extends State<ListScreen> {
   Widget _stationTile(Station station) {
     final distance = _distanceKm(station.latitude, station.longitude);
     final fullLine = _fullLineName(station.lineName);
+    final avg = station.averageRating;
+    final hasIncidents = station.reports.isNotEmpty;
+
+    Color severityBg() {
+      if (!hasIncidents) return AppColors.kFieldBg;
+      if (avg < 2) return AppColors.kSuccessGreen.withValues(alpha: 0.12);
+      if (avg < 4) return AppColors.kYellow.withValues(alpha: 0.12);
+      return AppColors.kErrorRed.withValues(alpha: 0.12);
+    }
+
+    Color severityFg() {
+      if (!hasIncidents) return AppColors.kGrey;
+      if (avg < 2) return AppColors.kSuccessGreen;
+      if (avg < 4) return AppColors.kYellow;
+      return AppColors.kErrorRed;
+    }
 
     return ListTile(
       key: Key('list-station-tile-${station.id}'),
@@ -613,28 +629,73 @@ class _ListScreenState extends State<ListScreen> {
         builder: (_) => StationDetailScreen(station: station),
       )),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Text(
-        station.name,
-        style: const TextStyle(
-            fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1A1A2E)),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              station.name,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1A2E)),
+            ),
+          ),
+          if (station.isFavourite) ...[
+            const SizedBox(width: 5),
+            const Icon(Icons.star_rounded, size: 16, color: AppColors.kYellow),
+          ],
+        ],
       ),
-      // line + distance in subtitle
       subtitle: Row(children: [
         Container(
-            width: 9, height: 9,
+            width: 9,
+            height: 9,
             decoration: BoxDecoration(
                 color: _lineColor(station.lineName), shape: BoxShape.circle)),
         const SizedBox(width: 5),
-        Text(fullLine, style: const TextStyle(fontSize: 12, color: AppColors.kGrey)),
+        Text(fullLine,
+            style: const TextStyle(fontSize: 12, color: AppColors.kGrey)),
         const SizedBox(width: 8),
-        const Text('·', style: TextStyle(fontSize: 12, color: AppColors.kGrey)),
+        const Text('·',
+            style: TextStyle(fontSize: 12, color: AppColors.kGrey)),
         const SizedBox(width: 8),
         const Icon(Icons.near_me_outlined, size: 11, color: AppColors.kGrey),
         const SizedBox(width: 3),
         Text(_formatDistance(distance),
             style: const TextStyle(fontSize: 12, color: AppColors.kGrey)),
       ]),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.kGrey, size: 20),
+      // severity badge in trailing
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (hasIncidents)
+            Container(
+              width: 28,
+              height: 28,
+              margin: const EdgeInsets.only(right: 4),
+              decoration: BoxDecoration(
+                color: severityBg(),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: severityFg().withValues(alpha: 0.5),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  avg.toStringAsFixed(1),
+                  style: TextStyle(
+                    fontSize: avg >= 10 ? 8 : 10,
+                    fontWeight: FontWeight.w700,
+                    color: severityFg(),
+                  ),
+                ),
+              ),
+            ),
+          const Icon(Icons.chevron_right, color: AppColors.kGrey, size: 20),
+        ],
+      ),
     );
   }
 
