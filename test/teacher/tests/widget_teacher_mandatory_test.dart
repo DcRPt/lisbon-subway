@@ -1,14 +1,12 @@
-import 'package:cmproject/main.dart';
 import 'package:cmproject/models/incident_report.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cmproject/data/metro_repository.dart';
 import 'package:cmproject/models/station.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:testable_form_field/testable_form_field.dart';
 
-import 'test_lib.dart';
+import '../helpers/test_helpers.dart';
 
 void main() {
   runWidgetTests();
@@ -16,8 +14,8 @@ void main() {
 
 void runWidgetTests() {
   // Tests start here
-  testWidgets('Navegacao - Tem uma bottom bar com 4 opcoes', checkDependsOn((tester) async {
-    await _pumpApp(tester);
+  testWidgets('Navegacao - Tem uma bottom bar com 4 opcoes', (WidgetTester tester) async {
+    await tester.pumpAppWithDependencies();
 
     expect(find.byType(NavigationBar), findsOneWidget,
         reason: "Deveria existir uma NavigationBar (atenção que a BottomNavigationBar deve deixar de ser usada)");
@@ -34,10 +32,10 @@ void runWidgetTests() {
       expect(find.byKey(Key(key)), findsOneWidget,
           reason: "Deveria existir um NavigationDestination com a key '$key'");
     }
-  }));
+  });
 
-  testWidgets('Navegacao - Bottom bar navega para os 4 ecras', checkDependsOn((tester) async {
-    await _pumpApp(tester);
+  testWidgets('Navegacao - Bottom bar navega para os 4 ecras', (WidgetTester tester) async {
+    await tester.pumpAppWithDependencies();
 
     // Navigate to Dashboard
     final dashboardBottomBarItemFinder = find.byKey(Key('dashboard-bottom-bar-item'));
@@ -92,10 +90,10 @@ void runWidgetTests() {
 
     expect(tester.widget(incidentsScreenFinder), isA<Scaffold>(),
         reason: "A key 'incidents-report-screen' deveria estar associada a um Scaffold no ecrã do registo de incidentes");
-  }));
+  });
 
-  testWidgets('Lista estacoes - Apresenta estacoes', checkDependsOn((tester) async {
-    await _pumpApp(tester);
+  testWidgets('Lista estacoes - Apresenta estacoes', (WidgetTester tester) async {
+    await tester.pumpAppWithDependencies();
 
     final listBottomBarItemFinder = find.byKey(Key('list-bottom-bar-item'));
     await tester.tap(listBottomBarItemFinder);
@@ -140,14 +138,10 @@ void runWidgetTests() {
         of: listTilesFinder.last, matching: find.text("Linha Castanha")),
         findsOneWidget,
         reason: "Deveria existir pelo menos um Text com o texto 'Linha Castanha' (no primeiro elemento da lista)");
-  },
-      dependsOn: [
-        "Navegacao - Tem uma bottom bar com 4 opcoes",
-        "Navegacao - Bottom bar navega para os 4 ecras"
-      ]));
+  });
 
-  testWidgets("Lista estacoes - Navega para o detalhe da estacao escolhida", checkDependsOn((tester) async {
-    await _pumpApp(tester);
+  testWidgets("Lista estacoes - Navega para o detalhe da estacao escolhida", (WidgetTester tester) async {
+    await tester.pumpAppWithDependencies();
 
     await tester.tap(find.byKey(Key('list-bottom-bar-item')));
     await tester.pumpAndSettle();
@@ -191,13 +185,10 @@ void runWidgetTests() {
 
     expect(find.text('Linha Castanha'), findsOneWidget,
         reason: "O ecrã de detalhe deveria apresentar o nome da linha 'Linha Castanha' (segundo elemento da lista)");
-  },
-      dependsOn: [
-        "Lista estacoes - Apresenta estacoes"
-      ]));
+  });
 
-  testWidgets("Incidentes - Existencia de campos do formulario e botao de submeter", checkDependsOn((tester) async {
-    await _pumpApp(tester);
+  testWidgets("Incidentes - Existencia de campos do formulario e botao de submeter", (WidgetTester tester) async {
+    await tester.pumpAppWithDependencies();
 
     // Navigate to Incidents
     await tester.tap(find.byKey(Key('incidents-report-bottom-bar-item')));
@@ -244,38 +235,17 @@ void runWidgetTests() {
 
     expect(submitButtonViewFinder, findsOneWidget,
         reason: "No ecrã do formulário, deveria existir um Widget com a key 'incident-form-submit-button");
-  },
-      dependsOn: [
-        "Navegacao - Tem uma bottom bar com 4 opcoes",
-        "Navegacao - Bottom bar navega para os 4 ecras"
-      ]));
+  });
 
-  testWidgets('Incidentes - Valicadoes de erro', checkDependsOn((tester) async {
-    final stations = [
-      Station(
-        id: "st1",
-        name: 'Station 1',
-        latitude: 40.7128,
-        longitude: -74.0060,
-        lineName: 'Rosa',
-      ),
-      Station(
-        id: "st2",
-        name: 'Station 2',
-        latitude: 43.7128,
-        longitude: -71.0060,
-        lineName: 'Castanha',
-      ),
-    ];
-
+  testWidgets('Incidentes - Valicadoes de erro', (WidgetTester tester) async {;
     final incident = IncidentReport(
         timestamp: DateTime(2024, 6, 5, 10, 0),
         rate: 4,
         type: IncidentType.Elevator
     );
 
-    // Place here defaultTestStations to make obvious which stations are being used
-    await _pumpApp(tester, testStations: stations);
+    final dependencies = await tester.pumpAppWithDependencies();
+    final stations = dependencies.localDataSource.stations;
 
     // Navigate to Incidents
     await tester.tap(find.byKey(Key('incidents-report-bottom-bar-item')));
@@ -316,26 +286,9 @@ void runWidgetTests() {
     await tester.ensureVisible(submitButtonViewFinder);
     await tester.tap(submitButtonViewFinder);
     await tester.pumpAndSettle();
-  }));
+  });
 
-  testWidgets("Incidentes - Inserir incidente", checkDependsOn((tester) async {
-    final stations = [
-      Station(
-        id: "st1",
-        name: 'Station 1',
-        latitude: 40.7128,
-        longitude: -74.0060,
-        lineName: 'Rosa',
-      ),
-      Station(
-        id: "st2",
-        name: 'Station 2',
-        latitude: 43.7128,
-        longitude: -71.0060,
-        lineName: 'Castanha',
-      ),
-    ];
-
+  testWidgets("Incidentes - Inserir incidente", (WidgetTester tester) async {
     final expectedReport = IncidentReport(
         timestamp: DateTime(2024, 6, 5, 10, 0),
         rate: 4,
@@ -343,11 +296,8 @@ void runWidgetTests() {
         notes: "Elevador estava avariado"
     );
 
-    // Place here defaultTestStations to make obvious which stations are being used
-    await _pumpApp(tester, testStations: stations);
-
-    final context = tester.element(find.byType(MyApp));
-    final repository = context.read<MetroRepository>();
+    final dependencies = await tester.pumpAppWithDependencies();
+    final local = dependencies.localDataSource;
 
     // Navigate to Incidents
     await tester.tap(find.byKey(Key('incidents-report-bottom-bar-item')));
@@ -368,7 +318,7 @@ void runWidgetTests() {
     final TestableFormField<String> notesViewFormField = tester
         .widget(find.byKey(Key('incident-notes-field')));
 
-    stationSelectionFormField.setValue(stations.first);
+    stationSelectionFormField.setValue(local.stations.first);
     incidentTypeSelectionFormField.setValue(expectedReport.type);
     ratingViewFormField.setValue(expectedReport.rate);
     dateTimeViewFormField.setValue(expectedReport.timestamp);
@@ -380,10 +330,9 @@ void runWidgetTests() {
     await tester.tap(submitButtonViewFinder);
     await tester.pumpAndSettle(Duration(milliseconds: 200));
 
-    final actualReport = repository.getAllStations()
-        .first
-        .reports
-        .first;
+    final actualReport = local
+        .stations.first
+        .reports.first;
 
     expect(actualReport.type, expectedReport.type,
         reason: "O tipo do incidente reportado deveria ser "
@@ -405,13 +354,16 @@ void runWidgetTests() {
         reason: "Os comentários do incidente reportado deveriam ser "
             "'${expectedReport.notes}' e não '${actualReport.notes}'"
     );
-  },
-      dependsOn: [
-        "Navegacao - Tem uma bottom bar com 4 opcoes",
-        "Navegacao - Bottom bar navega para os 4 ecras"
-      ]));
+  });
 
-  testWidgets("Detalhe - Apresenta incidente", checkDependsOn((tester) async {
+  testWidgets("Detalhe - Apresenta incidente", (WidgetTester tester) async {
+    final expectedIncident = IncidentReport(
+      timestamp: DateTime(2024, 6, 2, 14, 30),
+      type: IncidentType.Elevator,
+      rate: 1,
+      notes: "Elevador a funcionar mas estava muito sujo",
+    );
+
     final stations = [
       Station(
         id: "st1",
@@ -419,14 +371,7 @@ void runWidgetTests() {
         latitude: 40.7128,
         longitude: -74.0060,
         lineName: 'Rosa',
-        reports: [
-          IncidentReport(
-            timestamp: DateTime(2024, 6, 2, 14, 30),
-            type: IncidentType.Elevator,
-            rate: 1,
-            notes: "Elevador a funcionar mas estava muito sujo",
-          ),
-        ],
+        reports: [expectedIncident],
       ),
       Station(
           id: "st2",
@@ -445,11 +390,7 @@ void runWidgetTests() {
       ),
     ];
 
-    await _pumpApp(tester, testStations: stations);
-
-    final expectedIncident = stations.first
-        .reports
-        .first;
+    await tester.pumpAppWithDependencies(localStations: stations);
 
     await tester.tap(find.byKey(Key('list-bottom-bar-item')));
     await tester.pumpAndSettle();
@@ -482,46 +423,44 @@ void runWidgetTests() {
     // find if the text 'No comments' is present
     expect(find.text(expectedIncident.notes!), findsAtLeastNWidgets(1),
         reason: "Deveria existir pelo menos um Text com o texto '${expectedIncident.notes} (texto de uma dos incidentes)'");
-  },
-      dependsOn: [
-        "Lista estacoes - Navega para o detalhe da estacao escolhida",
-      ]));
+  });
 
-}
+  /** Parte 2 **/
 
-// Helpers
-Future<void> _pumpApp(WidgetTester tester, { List<Station>? testStations }) async {
-  final stations = testStations ?? [
-    Station(
-      id: "st1",
-      name: 'Station 1',
-      latitude: 40.7128,
-      longitude: -74.0060,
-      lineName: 'Rosa',
-    ),
-    Station(
-      id: "st2",
-      name: 'Station 2',
-      latitude: 43.7128,
-      longitude: -71.0060,
-      lineName: 'Castanha',
-    ),
-  ];
+  testWidgets('Lista estacoes - Com delay', (WidgetTester tester) async {
+    await tester.pumpAppWithDependencies(delay: 1);
 
-  final repository = MetroRepository();
+    final listBottomBarItemFinder = find.byKey(Key('list-bottom-bar-item'));
+    await tester.tap(listBottomBarItemFinder);
+    await tester.pump();
 
-  for (var item in stations) {
-    repository.insertStation(item);
-  }
+    expect(find.byType(CircularProgressIndicator), findsOneWidget,
+        reason: "Enquanto carrega a lista de hospitais, devia mostrar um CircularProgressIndicator");
 
-  await tester.pumpWidget(
-    MultiProvider(
-      providers: [
-        Provider<MetroRepository>.value(value: repository),
-      ],
-      child: const MyApp(),
-    ),
-  );
+    // wait for the response
+    await tester.pumpAndSettle(Duration(seconds: 1));
 
-  await tester.pumpAndSettle(Duration(milliseconds: 200));
+    final Finder listViewFinder = find.byKey(Key('list-view'));
+    expect(listViewFinder, findsOneWidget,
+        reason: "Após mostrar o CircularProgressIndicator, deveria existir um ListView com a key 'list-view'");
+    expect(tester.widget(listViewFinder), isA<ListView>(),
+        reason: "O widget com a key 'list-view' deveria ser um ListView");
+  });
+
+  testWidgets('Mapa estacoes - Apresenta estacoes', (WidgetTester tester) async {
+    await tester.pumpAppWithDependencies();
+
+    final listBottomBarItemFinder = find.byKey(Key('map-bottom-bar-item'));
+    await tester.tap(listBottomBarItemFinder);
+    await tester.pumpAndSettle();
+
+    final Finder mapFinder = find.byType(GoogleMap);
+    expect(mapFinder, findsOneWidget,
+        reason: "Depois de saltar para o ecrã com o mapa, deveria existir um widget do tipo GoogleMap");
+
+    final GoogleMap googleMap = tester.widget<GoogleMap>(mapFinder);
+    // Ensure the map contains exactly two markers
+    expect(googleMap.markers.length, 2, reason: "O mapa deve conter exatamente 2 marcadores");
+  });
+
 }
