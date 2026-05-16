@@ -23,4 +23,19 @@ class IncidentReport {
     required this.type,
     this.notes,
   });
+
+  Map<String, dynamic> toDB(String stationId) => {
+    'station_id': stationId,
+    'timestamp':  timestamp.toLocal().toIso8601String(),
+    'rate':       rate,
+    'type':       type.name,
+    'notes':      notes,
+  };
+
+  factory IncidentReport.fromDB(Map<String, dynamic> row) => IncidentReport(
+    timestamp: DateTime.parse(row['timestamp'] as String).toLocal(),
+    rate:      row['rate']  as int,
+    type:      IncidentType.values.firstWhere((t) => t.name == row['type']),
+    notes:     row['notes'] as String?,
+  );
 }
