@@ -35,14 +35,45 @@ String _formatDistance(double km) =>
     km < 1 ? '${(km * 1000).round()} m' : '${km.toStringAsFixed(1)} km';
 
 // ── Screen ────────────────────────────────────────────────────────────────────
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  late Future<(List<Station>, List<Station>)> _dataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final repo = context.read<MetroRepository>();
+    _dataFuture = Future.wait([
+      repo.getAllStations(),
+      repo.getFavourites(),
+    ]).then((results) => (results[0], results[1]));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final repo       = context.read<MetroRepository>();
-    final stations   = repo.getAllStations();
-    final favourites = repo.getFavourites();
+    return FutureBuilder(
+      future: _dataFuture,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final (stations, favourites) = snapshot.data!;
+        return _buildContent(context, stations, favourites);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context, List<Station> stations, List<Station> favourites) {
+    final repo = context.read<MetroRepository>();
 
     final Station? nearest = stations.isEmpty
         ? null

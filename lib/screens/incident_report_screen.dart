@@ -17,6 +17,7 @@ class IncidentReportScreen extends StatefulWidget {
 
 class _IncidentReportScreenState extends State<IncidentReportScreen> {
   final _formKey = GlobalKey<FormState>();
+  List<Station> _stations = [];
 
   Station? _station;
   IncidentType? _type;
@@ -28,6 +29,13 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
   void initState() {
     super.initState();
     _station = widget.preselectedStation;
+    _loadStations();
+  }
+
+  Future<void> _loadStations() async {
+    final stations = await context.read<MetroRepository>().getAllStations();
+    if (!mounted) return;
+    setState(() => _stations = stations);
   }
 
   Future<void> _pickDateTime(Function(DateTime?) onPicked) async {
@@ -52,7 +60,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
     onPicked(clamped);
   }
 
-  void _submit() {
+  void _submit() async {
     if (_station == null || _type == null || _severity == null || _dateTime == null) {
       _formKey.currentState!.validate();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -63,7 +71,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
     }
 
     try {
-      context.read<MetroRepository>().attachIncident(
+      await context.read<MetroRepository>().attachIncident(
         _station!.id,
         IncidentReport(
           timestamp: _dateTime!,
@@ -115,7 +123,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final stations = context.read<MetroRepository>().getAllStations();
+    final stations = _stations;
     const ramp = [
       AppColors.kSuccessGreen,
       AppColors.kSuccessGreen,

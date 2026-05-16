@@ -104,13 +104,23 @@ class _ListScreenState extends State<ListScreen> {
   String? _selectedLine;
   final _filters = _Filters();
   bool _favoritesOnly = false;
+  List<Station> _allStations = [];
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialLine != null) {
-      _selectedLine = widget.initialLine;
-    }
+    if (widget.initialLine != null) _selectedLine = widget.initialLine;
+    _loadStations();
+  }
+
+  Future<void> _loadStations() async {
+    final stations = await context.read<MetroRepository>().getAllStations();
+    if (!mounted) return;
+    setState(() {
+      _allStations = stations;
+      _loading = false;
+    });
   }
 
   @override
@@ -728,7 +738,7 @@ class _ListScreenState extends State<ListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final all = context.read<MetroRepository>().getAllStations();
+    final all = _allStations;
     final lines = _lines(all);
     final filtered = _filtered(all);
     final hasDisruption = all.any((s) => s.averageRating >= 4);
@@ -776,18 +786,20 @@ class _ListScreenState extends State<ListScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        // header inside ListView
-        child: ListView.builder(
-          key: const Key('list-view'),
-          itemCount: filtered.isEmpty ? 2 : filtered.length + 1,
-          itemBuilder: (_, i) {
-            if (i == 0) return _buildHeader(lines, hasDisruption);
-            if (filtered.isEmpty) return _emptyState();
-            return _stationTile(filtered[i - 1]);
-          },
-        ),
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
+            // header inside ListView
+            child: ListView.builder(
+              key: const Key('list-view'),
+              itemCount: filtered.isEmpty ? 2 : filtered.length + 1,
+              itemBuilder: (_, i) {
+                if (i == 0) return _buildHeader(lines, hasDisruption);
+                if (filtered.isEmpty) return _emptyState();
+                return _stationTile(filtered[i - 1]);
+              },
+            ),
+          ),
     );
   }
 }
