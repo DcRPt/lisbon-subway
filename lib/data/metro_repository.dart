@@ -1,51 +1,89 @@
+import 'package:cmproject/connectivity_module.dart';
+import 'package:cmproject/data/http_metro_datasource.dart';
+import 'package:cmproject/data/sqflite_metro_datasource.dart';
 import 'package:cmproject/models/incident_report.dart';
+import 'package:cmproject/models/line_status.dart';
 import 'package:cmproject/models/station.dart';
+import 'package:cmproject/models/waiting_time.dart';
+import 'package:sqflite_common/sqlite_api.dart';
 
 class MetroRepository {
+  final HttpMetroDataSource remote;
+  final SqfliteMetroDataSource local;
+  final ConnectivityModule connectivity;
 
-  final List<Station> _stations = [];
+  MetroRepository({
+    required this.remote,
+    required this.local,
+    required this.connectivity,
+  });
 
-  List<Station> getAllStations() {
-    return List.unmodifiable(_stations);
-  }
+  // ── Stations ──────────────────────────────────────────────────────────────
 
-  void attachIncident(String id, IncidentReport report)  {
-    final station = getStationDetail(id);
-    station.reports.add(report);
-  }
-
-  void insertStation(Station station)  {
-    _stations.add(station);
-  }
-
-  Station getStationDetail(String id) {
-    try {
-      return _stations.firstWhere((s) => s.id == id);
-    } on StateError {
-      throw StateError('No station found with id "$id".');
+  Future<List<Station>> getAllStations() async {
+    if (await connectivity.checkConnectivity()) {
+      final stations = await remote.getAllStations();
+      for (final station in stations) {
+        await local.insertStation(station);
+      }
+      return stations;
     }
+    return local.getAllStations();
   }
 
-  List<Station> getStationsByName(String name)  {
-    final query = name.trim().toLowerCase();
-    if (query.isEmpty) return List.unmodifiable(_stations);
-    return _stations
-        .where((s) => s.name.toLowerCase().contains(query))
-        .toList(growable: false);
+  Future<Station> getStationDetail(String id) async {
+    if (await connectivity.checkConnectivity()) {
+      return remote.getStationDetail(id);
+    }
+    return local.getStationDetail(id);
   }
 
-  List<IncidentReport> getIncidentsForStation(String id) {
-    return List<IncidentReport>.from(getStationDetail(id).reports)
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+  Future<List<Station>> getStationsByName(String name) async {
+    if (await connectivity.checkConnectivity()) {
+      return remote.getStationsByName(name);
+    }
+    return local.getStationsByName(name);
   }
 
-  List<Station> getStationsByLine(String lineName) {
+  Future<List<Station>> getStationsByLine(String lineName) async {
+    final stations = await getAllStations();
     final query = lineName.trim().toLowerCase();
-    return _stations
+    return stations
         .where((s) => s.lineName.toLowerCase() == query)
         .toList(growable: false);
   }
 
-  List<Station> getFavourites() =>
-      _stations.where((s) => s.isFavourite).toList(growable: false);
+  Future<List<Station>> getFavourites() async {
+    return local.getFavourites();
+  }
+
+  Future<void> toggleFavourite(String stationId) async {
+    return local.toggleFavourite(stationId);
+  }
+
+  // ── Incidents ─────────────────────────────────────────────────────────────
+
+  Future<void> attachIncident(String stationId, IncidentReport report) async {
+    await local.attachIncident(stationId, report);
+  }
+
+  Future<List<IncidentReport>> getIncidentsForStation(String stationId) async {
+    return local.getIncidentsForStation(stationId);
+  }
+
+  // ── Line status ───────────────────────────────────────────────────────────
+
+  Future<List<LineStatus>> getAllLineStatuses() async {
+    return remote.getAllLineStatuses();
+  }
+
+  Future<LineStatus> getLineStatus(String lineName) async {
+    return remote.getLineStatus(lineName);
+  }
+
+  // ── Waiting times ─────────────────────────────────────────────────────────
+
+  Future<List<WaitingTime>> getWaitingTimes(String stationId) async {
+    return remote.getWaitingTimes(stationId);
+  }
 }

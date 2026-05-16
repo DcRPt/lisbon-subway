@@ -13,4 +13,7 @@ class HttpClient {
     return client.get(Uri.parse(url), headers: headers);
   }
 
+  Future<Response> post({required String url, Map<String, String>? headers, Object? body}) {
+    return client.post(Uri.parse(url), headers: headers, body: body);
+  }
 }
