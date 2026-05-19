@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
 
+import '../connectivity_module.dart';
+import '../data/http_metro_datasource.dart';
+import '../data/sqflite_metro_datasource.dart';
 import 'list_screen.dart';
 
 String _destinationName(String id) {
@@ -45,13 +48,19 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late Future<(List<Station>, List<Station>)> _dataFuture;
 
+  late final MetroRepository _repo;
+
   @override
   void initState() {
     super.initState();
-    final repo = context.read<MetroRepository>();
+    _repo = MetroRepository(
+      remote: context.read<HttpMetroDataSource>(),
+      local: context.read<SqfliteMetroDataSource>(),
+      connectivity: context.read<ConnectivityModule>(),
+    );
     _dataFuture = Future.wait([
-      repo.getAllStations(),
-      repo.getFavourites(),
+      _repo.getAllStations(),
+      _repo.getFavourites(),
     ]).then((results) => (results[0], results[1]));
   }
 
@@ -73,8 +82,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildContent(BuildContext context, List<Station> stations, List<Station> favourites) {
-    final repo = context.read<MetroRepository>();
-
     final Station? nearest = stations.isEmpty
         ? null
         : stations.firstWhere(

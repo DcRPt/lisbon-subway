@@ -7,6 +7,10 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:testable_form_field/testable_form_field.dart';
 
+import '../connectivity_module.dart';
+import '../data/http_metro_datasource.dart';
+import '../data/sqflite_metro_datasource.dart';
+
 class IncidentReportScreen extends StatefulWidget {
   final Station? preselectedStation;
   const IncidentReportScreen({super.key, this.preselectedStation});
@@ -25,15 +29,22 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
   DateTime? _dateTime;
   String? _notes;
 
+  late final MetroRepository _repo;
+
   @override
   void initState() {
     super.initState();
+    _repo = MetroRepository(
+      remote: context.read<HttpMetroDataSource>(),
+      local: context.read<SqfliteMetroDataSource>(),
+      connectivity: context.read<ConnectivityModule>(),
+    );
     _station = widget.preselectedStation;
     _loadStations();
   }
 
   Future<void> _loadStations() async {
-    final stations = await context.read<MetroRepository>().getAllStations();
+    final stations = await _repo.getAllStations();
     if (!mounted) return;
     setState(() => _stations = stations);
   }
@@ -71,7 +82,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
     }
 
     try {
-      await context.read<MetroRepository>().attachIncident(
+      await _repo.attachIncident(
         _station!.id,
         IncidentReport(
           timestamp: _dateTime!,

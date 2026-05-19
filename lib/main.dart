@@ -40,13 +40,6 @@ void main() async {
         Provider<ConnectivityModule>(
           create: (_) => ConnectivityService(),
         ),
-        Provider<MetroRepository>(
-          create: (context) => MetroRepository(
-            remote:       context.read<HttpMetroDataSource>(),
-            local:        context.read<SqfliteMetroDataSource>(),
-            connectivity: context.read<ConnectivityModule>(),
-          ),
-        ),
         Provider<LocationModule>(create: (_) => GpsLocationService()),
       ],
       child: const MyApp(),

@@ -8,7 +8,10 @@ import 'package:cmproject/screens/station_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../connectivity_module.dart';
 import '../data/app_colors.dart';
+import '../data/http_metro_datasource.dart';
+import '../data/sqflite_metro_datasource.dart';
 
 const _mockUserLat = 38.7169;
 const _mockUserLng = -9.1399;
@@ -107,9 +110,16 @@ class _ListScreenState extends State<ListScreen> {
   List<Station> _allStations = [];
   bool _loading = true;
 
+  late final MetroRepository _repo;
+
   @override
   void initState() {
     super.initState();
+    _repo = MetroRepository(
+      remote: context.read<HttpMetroDataSource>(),
+      local: context.read<SqfliteMetroDataSource>(),
+      connectivity: context.read<ConnectivityModule>(),
+    );
     if (widget.initialLine != null) _selectedLine = widget.initialLine;
     _loadStations();
   }
