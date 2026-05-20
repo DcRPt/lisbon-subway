@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'connectivity_service.dart';
+import 'data/generic_data_source.dart';
+import 'data/my_generic_data_source.dart';
 import 'location_module.dart';
 
 class _HttpOverrides extends io.HttpOverrides {
@@ -28,11 +30,13 @@ void main() async {
   final sqfliteDataSource = SqfliteMetroDataSource();
   await sqfliteDataSource.init();
 
+  final httpClient = HttpClient();
+
   runApp(
     MultiProvider(
       providers: [
         Provider<HttpMetroDataSource>(
-          create: (_) => HttpMetroDataSource(client: HttpClient()),
+          create: (_) => HttpMetroDataSource(client: httpClient),
         ),
         Provider<SqfliteMetroDataSource>(
           create: (_) => sqfliteDataSource,
@@ -41,6 +45,9 @@ void main() async {
           create: (_) => ConnectivityService(),
         ),
         Provider<LocationModule>(create: (_) => GpsLocationService()),
+        Provider<GenericDataSource>(
+          create: (_) => MyGenericDataSource(client: httpClient, db: sqfliteDataSource.db),
+        ),
       ],
       child: const MyApp(),
     )

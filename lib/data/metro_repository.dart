@@ -5,17 +5,19 @@ import 'package:cmproject/models/incident_report.dart';
 import 'package:cmproject/models/line_status.dart';
 import 'package:cmproject/models/station.dart';
 import 'package:cmproject/models/waiting_time.dart';
-import 'package:sqflite_common/sqlite_api.dart';
+import 'generic_data_source.dart';
 
 class MetroRepository {
   final HttpMetroDataSource remote;
   final SqfliteMetroDataSource local;
   final ConnectivityModule connectivity;
+  final GenericDataSource generic;
 
   MetroRepository({
     required this.remote,
     required this.local,
     required this.connectivity,
+    required this.generic,
   });
 
   // ── Stations ──────────────────────────────────────────────────────────────
@@ -54,11 +56,12 @@ class MetroRepository {
   }
 
   Future<List<Station>> getFavourites() async {
-    return local.getFavourites();
+    final result = await generic.execute(type: GenericOperationType.GetFavourites);
+    return (result as List<Station>?) ?? [];
   }
 
   Future<void> toggleFavourite(String stationId) async {
-    return local.toggleFavourite(stationId);
+    await generic.execute(type: GenericOperationType.ToggleFavourite, data: stationId);
   }
 
   // ── Incidents ─────────────────────────────────────────────────────────────
@@ -74,16 +77,18 @@ class MetroRepository {
   // ── Line status ───────────────────────────────────────────────────────────
 
   Future<List<LineStatus>> getAllLineStatuses() async {
-    return remote.getAllLineStatuses();
+    final result = await generic.execute(type: GenericOperationType.GetLineStatuses);
+    return (result as List<LineStatus>?) ?? [];
   }
 
-  Future<LineStatus> getLineStatus(String lineName) async {
-    return remote.getLineStatus(lineName);
+  Future<LineStatus?> getLineStatus(String lineName) async {
+    return await generic.execute(type: GenericOperationType.GetLineStatus, data: lineName) as LineStatus?;
   }
 
   // ── Waiting times ─────────────────────────────────────────────────────────
 
   Future<List<WaitingTime>> getWaitingTimes(String stationId) async {
-    return remote.getWaitingTimes(stationId);
+    final result = await generic.execute(type: GenericOperationType.GetWaitingTimes, data: stationId);
+    return (result as List<WaitingTime>?) ?? [];
   }
 }

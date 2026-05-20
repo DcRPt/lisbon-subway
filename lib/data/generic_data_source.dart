@@ -1,5 +1,13 @@
 enum GenericOperationType {
-  GetNames // exemplo
+  // Sqflite extras
+  GetFavourites,
+  ToggleFavourite,
+  GetIncidentsForStation,
+  // HTTP extras
+  GetLineStatuses,
+  GetLineStatus,
+  GetWaitingTimes,
+  GetDestinations,
 }
 
 /**

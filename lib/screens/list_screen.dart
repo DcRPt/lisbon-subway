@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 
 import '../connectivity_module.dart';
 import '../data/app_colors.dart';
+import '../data/generic_data_source.dart';
 import '../data/http_metro_datasource.dart';
 import '../data/sqflite_metro_datasource.dart';
 
@@ -119,13 +120,14 @@ class _ListScreenState extends State<ListScreen> {
       remote: context.read<HttpMetroDataSource>(),
       local: context.read<SqfliteMetroDataSource>(),
       connectivity: context.read<ConnectivityModule>(),
+      generic: context.read<GenericDataSource>(),
     );
     if (widget.initialLine != null) _selectedLine = widget.initialLine;
     _loadStations();
   }
 
   Future<void> _loadStations() async {
-    final stations = await context.read<MetroRepository>().getAllStations();
+    final stations = await _repo.getAllStations();
     if (!mounted) return;
     setState(() {
       _allStations = stations;

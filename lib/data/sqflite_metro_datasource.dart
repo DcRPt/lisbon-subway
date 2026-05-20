@@ -21,6 +21,8 @@ class SqfliteMetroDataSource extends MetroDataSource {
     );
   }
 
+  Database get db => _db!;
+
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE stations (
@@ -113,42 +115,6 @@ class SqfliteMetroDataSource extends MetroDataSource {
         final incidents = await getIncidentsForStation(row['id'] as String);
         return Station.fromDB(row, incidents);
       }),
-    );
-  }
-
-  // ── Favourites  ────────────────────────────────────────────────────────────
-
-
-  Future<List<Station>> getFavourites() async {
-    final rows = await _db!.query(
-      'stations',
-      where: 'isFavourite = ?',
-      whereArgs: [1],
-    );
-    return Future.wait(
-      rows.map((row) async {
-        final incidents = await getIncidentsForStation(row['id'] as String);
-        return Station.fromDB(row, incidents);
-      }),
-    );
-  }
-
-  Future<void> toggleFavourite(String stationId) async {
-    final rows = await _db!.query(
-      'stations',
-      columns:   ['isFavourite'],
-      where:     'id = ?',
-      whereArgs: [stationId],
-    );
-
-    if (rows.isEmpty) throw Exception('Station $stationId not found');
-
-    final current = (rows.first['isFavourite'] as int) == 1;
-    await _db!.update(
-      'stations',
-      {'isFavourite': current ? 0 : 1},
-      where:     'id = ?',
-      whereArgs: [stationId],
     );
   }
 }

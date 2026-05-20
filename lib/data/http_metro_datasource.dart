@@ -1,16 +1,12 @@
 import 'dart:convert';
 import 'package:cmproject/data/metro_datasource.dart';
 import 'package:cmproject/http/http_client.dart';
-import 'package:cmproject/models/destination.dart';
 import 'package:cmproject/models/incident_report.dart';
-import 'package:cmproject/models/line_status.dart';
 import 'package:cmproject/models/station.dart';
-import 'package:cmproject/models/waiting_time.dart';
-import 'package:http/http.dart';
 
 class HttpMetroDataSource extends MetroDataSource {
 
-  static const _tokenUrl = 'https://api.metrolisboa.pt:8243/ACCESS_TOKEN';
+  static const _tokenUrl = 'https://api.metrolisboa.pt:8243/token';
   static const _baseUrl  = 'https://api.metrolisboa.pt:8243/estadoServicoML/1.0.1';
   static const _consumerKey    = 'YOUR_CONSUMER_KEY_HERE';
   static const _consumerSecret = 'YOUR_CONSUMER_SECRET_HERE';
@@ -129,95 +125,5 @@ class HttpMetroDataSource extends MetroDataSource {
     final all = await getAllStations();
     final lowerName = name.toLowerCase();
     return all.where((s) => s.name.toLowerCase().contains(lowerName)).toList();
-  }
-
-  // ── Extra endpoints ───────────────────────────────────────────────────────
-
-  // GET /estadoLinha/todos
-  Future<List<LineStatus>> getAllLineStatuses() async {
-    if (_accessToken == null) await _fetchToken();
-    var response = await _client?.get(
-      url: '$_baseUrl/estadoLinha/todos',
-      headers: {'Authorization': 'Bearer $_accessToken'},
-    );
-    if (response?.statusCode == 401) {
-      await _refreshAccessToken();
-      response = await _client?.get(
-        url: '$_baseUrl/estadoLinha/todos',
-        headers: {'Authorization': 'Bearer $_accessToken'},
-      );
-    }
-    if (response?.statusCode == 200) {
-      final decoded = jsonDecode(response!.body);
-      return LineStatus.listFromResponse(decoded);
-    } else {
-      throw Exception('Failed to load line statuses');
-    }
-  }
-
-  // GET /estadoLinha/{linha}
-  Future<LineStatus> getLineStatus(String lineName) async {
-    if (_accessToken == null) await _fetchToken();
-    var response = await _client?.get(
-      url: '$_baseUrl/estadoLinha/$lineName',
-      headers: {'Authorization': 'Bearer $_accessToken'},
-    );
-    if (response?.statusCode == 401) {
-      await _refreshAccessToken();
-      response = await _client?.get(
-        url: '$_baseUrl/estadoLinha/$lineName',
-        headers: {'Authorization': 'Bearer $_accessToken'},
-      );
-    }
-    if (response?.statusCode == 200) {
-      final decoded = jsonDecode(response!.body);
-      return LineStatus.fromResponse(lineName, decoded);
-    } else {
-      throw Exception('Failed to load status for $lineName');
-    }
-  }
-
-  // GET /tempoEspera/Estacao/{estacao}
-  Future<List<WaitingTime>> getWaitingTimes(String stationId) async {
-    if (_accessToken == null) await _fetchToken();
-    var response = await _client?.get(
-      url: '$_baseUrl/tempoEspera/Estacao/$stationId',
-      headers: {'Authorization': 'Bearer $_accessToken'},
-    );
-    if (response?.statusCode == 401) {
-      await _refreshAccessToken();
-      response = await _client?.get(
-        url: '$_baseUrl/tempoEspera/Estacao/$stationId',
-        headers: {'Authorization': 'Bearer $_accessToken'},
-      );
-    }
-    if (response?.statusCode == 200) {
-      final decoded = jsonDecode(response!.body);
-      return WaitingTime.listFromResponse(decoded);
-    } else {
-      throw Exception('Failed to load waiting times for $stationId');
-    }
-  }
-
-  // GET /infoDestinos/todos
-  Future<Map<String, String>> getDestinations() async {
-    if (_accessToken == null) await _fetchToken();
-    var response = await _client?.get(
-      url: '$_baseUrl/infoDestinos/todos',
-      headers: {'Authorization': 'Bearer $_accessToken'},
-    );
-    if (response?.statusCode == 401) {
-      await _refreshAccessToken();
-      response = await _client?.get(
-        url: '$_baseUrl/infoDestinos/todos',
-        headers: {'Authorization': 'Bearer $_accessToken'},
-      );
-    }
-    if (response?.statusCode == 200) {
-      final decoded = jsonDecode(response!.body);
-      return Destination.mapFromResponse(decoded);
-    } else {
-      throw Exception('Failed to load destinations');
-    }
   }
 }

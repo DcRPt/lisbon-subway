@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'dart:math';
 
 import '../connectivity_module.dart';
+import '../data/generic_data_source.dart';
 import '../data/http_metro_datasource.dart';
 import '../data/sqflite_metro_datasource.dart';
 import 'list_screen.dart';
@@ -57,6 +58,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       remote: context.read<HttpMetroDataSource>(),
       local: context.read<SqfliteMetroDataSource>(),
       connectivity: context.read<ConnectivityModule>(),
+      generic: context.read<GenericDataSource>(),
     );
     _dataFuture = Future.wait([
       _repo.getAllStations(),

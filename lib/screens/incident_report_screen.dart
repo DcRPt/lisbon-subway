@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:testable_form_field/testable_form_field.dart';
 
 import '../connectivity_module.dart';
+import '../data/generic_data_source.dart';
 import '../data/http_metro_datasource.dart';
 import '../data/sqflite_metro_datasource.dart';
 
@@ -38,6 +39,7 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
       remote: context.read<HttpMetroDataSource>(),
       local: context.read<SqfliteMetroDataSource>(),
       connectivity: context.read<ConnectivityModule>(),
+      generic: context.read<GenericDataSource>(),
     );
     _station = widget.preselectedStation;
     _loadStations();
