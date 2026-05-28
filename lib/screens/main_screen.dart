@@ -1,3 +1,4 @@
+import 'package:cmproject/data/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'pages.dart';
 
@@ -24,12 +25,30 @@ class _MainScreenState extends State<MainScreen> {
       body: screens[_selectedIndex].widget,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
-        destinations: screens.map((s) => NavigationDestination(
-          key: s.navKey,
-          icon: Icon(s.icon),
-          label: s.title,
-        )).toList(),
+        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
+        backgroundColor: Colors.white,
+        // transparent indicator removes the default pill shape
+        indicatorColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        overlayColor: WidgetStateProperty.all(
+          AppColors.kNavyBlue.withValues(alpha: 0.06),
+        ),
+        destinations: screens.asMap().entries.map((e) {
+          final selected = e.key == _selectedIndex;
+          return NavigationDestination(
+            key: e.value.navKey,
+            icon:         Icon(e.value.icon,
+                color: AppColors.kGrey,
+                size: 24),
+            selectedIcon: Icon(e.value.icon,
+                color: AppColors.kNavyBlue,
+                size: 24),
+            label: e.value.title,
+          );
+        }).toList(),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
     );
   }
