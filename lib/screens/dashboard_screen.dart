@@ -1,8 +1,10 @@
 import 'package:cmproject/data/app_colors.dart';
 import 'package:cmproject/data/metro_repository.dart';
+import 'package:cmproject/location_module.dart';
 import 'package:cmproject/models/station.dart';
 import 'package:cmproject/screens/station_detail_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
 
@@ -24,14 +26,13 @@ Color _colorForLine(String lineName) =>
 const _mockUserLat = 38.7169;
 const _mockUserLng = -9.1399;
 
-double _distanceKm(double? lat, double? lng) {
-  if (lat == null || lng == null) return double.maxFinite;
+double _distanceKm(double lat1, double lon1, double lat2, double lon2) {
   const r = 6371.0;
-  final dLat = (lat - _mockUserLat) * pi / 180;
-  final dLng = (lng - _mockUserLng) * pi / 180;
+  final dLat = (lat2 - lat1) * pi / 180;
+  final dLon = (lon2 - lon1) * pi / 180;
   final a = sin(dLat / 2) * sin(dLat / 2) +
-      cos(_mockUserLat * pi / 180) * cos(lat * pi / 180) *
-          sin(dLng / 2) * sin(dLng / 2);
+      cos(lat1 * pi / 180) * cos(lat2 * pi / 180) *
+          sin(dLon / 2) * sin(dLon / 2);
   return r * 2 * atan2(sqrt(a), sqrt(1 - a));
 }
 
@@ -47,13 +48,17 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  late Future<(List<Station>, List<Station>)> _dataFuture;
+  late Future<(List<Station>, List<Station>, LocationData)> _dataFuture;
 
   late final MetroRepository _repo;
+  late final LocationModule _location;
+  double? _userLat;
+  double? _userLng;
 
   @override
   void initState() {
     super.initState();
+    _location = context.read<LocationModule>();
     _repo = MetroRepository(
       remote: context.read<HttpMetroDataSource>(),
       local: context.read<SqfliteMetroDataSource>(),
@@ -63,7 +68,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _dataFuture = Future.wait([
       _repo.getAllStations(),
       _repo.getFavourites(),
-    ]).then((results) => (results[0], results[1]));
+      _location.onLocationChanged().first
+          .timeout(const Duration(seconds: 8), onTimeout: () => LocationData.fromMap({}))
+          .catchError((_) => LocationData.fromMap({})),
+    ]).then((results) {
+      final location = results[2] as LocationData;
+      _userLat = location.latitude;
+      _userLng = location.longitude;
+      return (results[0] as List<Station>, results[1] as List<Station>, location);
+    });
   }
 
   @override
@@ -77,19 +90,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         }
 
-        final (stations, favourites) = snapshot.data!;
+        final (stations, favourites, _) = snapshot.data!;
         return _buildContent(context, stations, favourites);
       },
     );
   }
 
   Widget _buildContent(BuildContext context, List<Station> stations, List<Station> favourites) {
+    final baseLat = _userLat ?? _mockUserLat;
+    final baseLng = _userLng ?? _mockUserLng;
+
     final Station? nearest = stations.isEmpty
         ? null
-        : stations.firstWhere(
-          (s) => s.name == 'Marquês de Pombal',
-      orElse: () => stations.first,
-    );
+        : stations.reduce((a, b) {
+      final aDistance = _distanceKm(baseLat, baseLng, a.latitude, a.longitude);
+      final bDistance = _distanceKm(baseLat, baseLng, b.latitude, b.longitude);
+      return aDistance <= bDistance ? a : b;
+    });
 
     final now = DateTime.now();
     final Map<String, bool> lineDisrupted = {};
@@ -280,6 +297,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final color = _colorForLine(station.lineName);
 
+    final baseLat = _userLat ?? _mockUserLat;
+    final baseLng = _userLng ?? _mockUserLng;
+    final distance = _distanceKm(baseLat, baseLng, station.latitude, station.longitude);
+
     return InkWell(
       key: const Key('dashboard-nearest-card'),
       borderRadius: BorderRadius.circular(16),
@@ -302,7 +323,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ]),
               Row(children: [
-                Text('320 m',
+                Text(_formatDistance(distance),
                   key: const Key('dashboard-nearest-distance'),
                   style: TextStyle(color: Colors.grey[500], fontSize: 13),
                 ),
@@ -452,7 +473,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ]);
 
   Widget _favDetails(Station station, Color color) {
-    final distance = _distanceKm(station.latitude, station.longitude);
+    final baseLat = _userLat ?? _mockUserLat;
+    final baseLng = _userLng ?? _mockUserLng;
+    final distance = _distanceKm(baseLat, baseLng, station.latitude, station.longitude);
 
     return Row(children: [
       _dot(color, size: 8),

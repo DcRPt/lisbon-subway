@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:cmproject/data/metro_repository.dart';
+import 'package:cmproject/location_module.dart';
 import 'package:cmproject/models/incident_report.dart';
 import 'package:cmproject/models/station.dart';
 import 'package:cmproject/screens/station_detail_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 
 import '../connectivity_module.dart';
@@ -18,14 +20,13 @@ import '../models/line_status.dart';
 const _mockUserLat = 38.7169;
 const _mockUserLng = -9.1399;
 
-double _distanceKm(double? lat, double? lng) {
-  if (lat == null || lng == null) return double.maxFinite;
+double _distanceKm(double lat1, double lon1, double lat2, double lon2) {
   const r = 6371.0;
-  final dLat = (lat - _mockUserLat) * pi / 180;
-  final dLng = (lng - _mockUserLng) * pi / 180;
+  final dLat = (lat2 - lat1) * pi / 180;
+  final dLon = (lon2 - lon1) * pi / 180;
   final a = sin(dLat / 2) * sin(dLat / 2) +
-      cos(_mockUserLat * pi / 180) * cos(lat * pi / 180) *
-          sin(dLng / 2) * sin(dLng / 2);
+      cos(lat1 * pi / 180) * cos(lat2 * pi / 180) *
+          sin(dLon / 2) * sin(dLon / 2);
   return r * 2 * atan2(sqrt(a), sqrt(1 - a));
 }
 
@@ -112,12 +113,16 @@ class _ListScreenState extends State<ListScreen> {
   List<Station> _allStations = [];
   List<LineStatus> _lineStatuses = [];
   bool _loading = true;
+  double? _userLat;
+  double? _userLng;
 
   late final MetroRepository _repo;
+  late final LocationModule _location;
 
   @override
   void initState() {
     super.initState();
+    _location = context.read<LocationModule>();
     _repo = MetroRepository(
       remote: context.read<HttpMetroDataSource>(),
       local: context.read<SqfliteMetroDataSource>(),
@@ -133,10 +138,17 @@ class _ListScreenState extends State<ListScreen> {
       _repo.getAllStations(),
       _repo.getAllLineStatuses(),
     ]);
+
+    final loc = await _location.onLocationChanged().first
+        .timeout(const Duration(seconds: 8), onTimeout: () => LocationData.fromMap({}))
+        .catchError((_) => LocationData.fromMap({}));
+
     if (!mounted) return;
     setState(() {
       _allStations = results[0] as List<Station>;
       _lineStatuses = results[1] as List<LineStatus>;
+      _userLat = loc.latitude;
+      _userLng = loc.longitude;
       _loading = false;
     });
   }
@@ -156,22 +168,29 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   List<Station> _filtered(List<Station> all) {
-    // no active filters on opening
-    if (_query.isEmpty &&
-        !_favoritesOnly &&
-        _selectedLine == null &&
-        _filters.activeCount == 0) {
-      return all;
-    }
-
     final results = all.where((s) {
-      if (_query.isNotEmpty && !s.name.toLowerCase().contains(_query)) return false;
-      if (_favoritesOnly && !s.isFavourite) return false;
+      if (_query.isNotEmpty && !s.name.toLowerCase().contains(_query)) {
+        return false;
+      }
+      if (_favoritesOnly && !s.isFavourite) {
+        return false;
+      }
       if (_selectedLine != null &&
-          !s.lineName.toLowerCase().contains(_selectedLine!.toLowerCase())) return false;
+          !s.lineName.toLowerCase().contains(_selectedLine!.toLowerCase())) {
+        return false;
+      }
       if (_filters.radiusKm != null &&
-          _distanceKm(s.latitude, s.longitude) > _filters.radiusKm!) return false;
-      if (_filters.noIncidentsOnly && s.reports.isNotEmpty) return false;
+          _distanceKm(
+            _userLat ?? _mockUserLat,
+            _userLng ?? _mockUserLng,
+            s.latitude,
+            s.longitude,
+          ) > _filters.radiusKm!) {
+        return false;
+      }
+      if (_filters.noIncidentsOnly && s.reports.isNotEmpty) {
+        return false;
+      }
       if (!_filters.noIncidentsOnly && s.reports.isNotEmpty) {
         final avg = s.averageRating;
         if (_filters.severityAtLeast && avg < _filters.maxSeverity) return false;
@@ -179,14 +198,29 @@ class _ListScreenState extends State<ListScreen> {
       }
       if (_filters.excludedTypes.isNotEmpty &&
           s.reports.isNotEmpty &&
-          s.reports.every((r) => _filters.excludedTypes.contains(r.type))) return false;
+          s.reports.every((r) => _filters.excludedTypes.contains(r.type))) {
+        return false;
+      }
       return true;
     }).toList();
 
     switch (_filters.sortBy) {
       case _SortBy.distance:
-        results.sort((a, b) => _distanceKm(a.latitude, a.longitude)
-            .compareTo(_distanceKm(b.latitude, b.longitude)));
+        results.sort((a, b) {
+          final aDistance = _distanceKm(
+            _userLat ?? _mockUserLat,
+            _userLng ?? _mockUserLng,
+            a.latitude,
+            a.longitude,
+          );
+          final bDistance = _distanceKm(
+            _userLat ?? _mockUserLat,
+            _userLng ?? _mockUserLng,
+            b.latitude,
+            b.longitude,
+          );
+          return aDistance.compareTo(bDistance);
+        });
       case _SortBy.name:
         results.sort((a, b) => a.name.compareTo(b.name));
       case _SortBy.severity:
@@ -648,7 +682,12 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   Widget _stationTile(Station station) {
-    final distance = _distanceKm(station.latitude, station.longitude);
+    final distance = _distanceKm(
+      _userLat ?? _mockUserLat,
+      _userLng ?? _mockUserLng,
+      station.latitude,
+      station.longitude,
+    );
     final fullLine = _fullLineName(station.lineName);
     final avg = station.averageRating;
     final hasIncidents = station.reports.isNotEmpty;
