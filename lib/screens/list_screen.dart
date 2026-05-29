@@ -68,7 +68,7 @@ Color _lineColor(String lineName) {
 }
 
 class _Filters {
-  _SortBy sortBy = _SortBy.distance;
+  _SortBy sortBy = _SortBy.name;
   bool noIncidentsOnly = false;
   int maxSeverity = 5;
   bool severityAtLeast = false;
