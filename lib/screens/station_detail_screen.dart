@@ -1,8 +1,16 @@
+import 'package:cmproject/data/metro_repository.dart';
 import 'package:cmproject/models/station.dart';
+import 'package:cmproject/models/waiting_time.dart';
 import 'package:cmproject/data/app_colors.dart';
 import 'package:cmproject/screens/incident_report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import '../connectivity_module.dart';
+import '../data/generic_data_source.dart';
+import '../data/http_metro_datasource.dart';
+import '../data/sqflite_metro_datasource.dart';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -14,15 +22,6 @@ Color _lineColor(String lineName) {
   return AppColors.kGrey;
 }
 
-String _destinationName(String id) {
-  if (id == '10') return 'Reboleira';
-  if (id == '20') return 'Santa Apolónia';
-  if (id == '30') return 'Cais do Sodré';
-  if (id == '40') return 'Telheiras';
-  if (id == '60') return 'Aeroporto';
-  if (id == '38') return 'S. Sebastião';
-  return id;
-}
 
 Color _severityBg(double avg) {
   if (avg == 0) return AppColors.kFieldBg;
@@ -51,12 +50,86 @@ Color _severityDotFg(int rate) {
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
-class StationDetailScreen extends StatelessWidget {
+class StationDetailScreen extends StatefulWidget {
   final Station station;
   const StationDetailScreen({super.key, required this.station});
 
   @override
+  State<StationDetailScreen> createState() => _StationDetailScreenState();
+}
+
+class _StationDetailScreenState extends State<StationDetailScreen> {
+  late final MetroRepository _repo;
+  Station? _station;
+  List<WaitingTime> _waitingTimes = [];
+  Map<String, String> _destinations = {};
+  bool _loading = true;
+  bool _isFavourite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _repo = MetroRepository(
+      remote: context.read<HttpMetroDataSource>(),
+      local: context.read<SqfliteMetroDataSource>(),
+      connectivity: context.read<ConnectivityModule>(),
+      generic: context.read<GenericDataSource>(),
+    );
+    _load();
+  }
+
+  Future<void> _load() async {
+    final results = await Future.wait([
+      _repo.getStationDetail(widget.station.id),
+      _repo.getWaitingTimes(widget.station.id),
+      _repo.generic.execute(type: GenericOperationType.GetDestinations),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _station = results[0] as Station;
+      _waitingTimes = results[1] as List<WaitingTime>;
+      _destinations = (results[2] as Map<String, String>?) ?? {};
+      _isFavourite = (_station!).isFavourite;
+      _loading = false;
+    });
+  }
+
+  Future<void> _reload() => _load();
+
+  Future<void> _toggleFavourite() async {
+    // Optimistic update
+    setState(() => _isFavourite = !_isFavourite);
+    try {
+      await _repo.toggleFavourite(widget.station.id);
+    } catch (_) {
+      // Revert on failure
+      if (mounted) setState(() => _isFavourite = !_isFavourite);
+    }
+  }
+
+  String _destinationName(String id) => _destinations[id] ?? id;
+
+  @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        key: const Key('detail-screen'),
+        backgroundColor: const Color(0xFFFAFAF8),
+        appBar: AppBar(
+          backgroundColor: AppColors.kNavyBlue,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: Text(
+            widget.station.name,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final station = _station!;
+
     final reports = List.from(station.reports)
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
@@ -101,6 +174,23 @@ class StationDetailScreen extends StatelessWidget {
             ]),
           ],
         ),
+        actions: [
+          IconButton(
+            key: const Key('detail-favourite-button'),
+            tooltip: _isFavourite ? 'Remover dos favoritos' : 'Adicionar aos favoritos',
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 80),
+              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+              child: Icon(
+                _isFavourite ? Icons.star_rounded : Icons.star_outline_rounded,
+                key: ValueKey(_isFavourite),
+                color: _isFavourite ? AppColors.kYellow : Colors.white70,
+                size: 26,
+              ),
+            ),
+            onPressed: _toggleFavourite,
+          ),
+        ],
       ),
       body: SafeArea(
         child: ListView(
@@ -198,7 +288,7 @@ class StationDetailScreen extends StatelessWidget {
             ),
 
             // ── Waiting times ─────────────────────────────────────────────
-            if (station.waitingTimes.isNotEmpty) ...[
+            if (_waitingTimes.isNotEmpty) ...[
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                 child: Column(
@@ -221,10 +311,10 @@ class StationDetailScreen extends StatelessWidget {
                         border: Border.all(color: AppColors.kFieldBorder),
                       ),
                       child: Column(
-                        children: station.waitingTimes.asMap().entries.map((entry) {
-                          final index  = entry.key;
-                          final wt     = entry.value;
-                          final isLast = index == station.waitingTimes.length - 1;
+                        children: _waitingTimes.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final wt = entry.value;
+                          final isLast = index == _waitingTimes.length - 1;
 
                           return Column(
                             children: [
@@ -349,8 +439,8 @@ class StationDetailScreen extends StatelessWidget {
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => IncidentReportScreen(
@@ -358,6 +448,7 @@ class StationDetailScreen extends StatelessWidget {
                           ),
                         ),
                       );
+                      _reload();
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(

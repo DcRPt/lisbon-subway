@@ -13,6 +13,7 @@ import '../data/app_colors.dart';
 import '../data/generic_data_source.dart';
 import '../data/http_metro_datasource.dart';
 import '../data/sqflite_metro_datasource.dart';
+import '../models/line_status.dart';
 
 const _mockUserLat = 38.7169;
 const _mockUserLng = -9.1399;
@@ -109,6 +110,7 @@ class _ListScreenState extends State<ListScreen> {
   final _filters = _Filters();
   bool _favoritesOnly = false;
   List<Station> _allStations = [];
+  List<LineStatus> _lineStatuses = [];
   bool _loading = true;
 
   late final MetroRepository _repo;
@@ -127,10 +129,14 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   Future<void> _loadStations() async {
-    final stations = await _repo.getAllStations();
+    final results = await Future.wait([
+      _repo.getAllStations(),
+      _repo.getAllLineStatuses(),
+    ]);
     if (!mounted) return;
     setState(() {
-      _allStations = stations;
+      _allStations = results[0] as List<Station>;
+      _lineStatuses = results[1] as List<LineStatus>;
       _loading = false;
     });
   }
@@ -205,183 +211,183 @@ class _ListScreenState extends State<ListScreen> {
       ..radiusKm = _filters.radiusKm;
 
     showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFFFAFAF8),
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheet) => Padding(
-          padding: EdgeInsets.fromLTRB(
-              16, 12, 16, MediaQuery.of(ctx).viewInsets.bottom + 24),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36, height: 4,
-                    decoration: BoxDecoration(
-                        color: AppColors.kFieldBorder,
-                        borderRadius: BorderRadius.circular(2)),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Filtros e ordenação',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                    TextButton(
-                      key: const Key('list-filter-clear'),
-                      onPressed: () => setSheet(() => draft.reset()),
-                      child: Text('Limpar',
-                          style: TextStyle(color: AppColors.kNavyBlue, fontSize: 13)),
+        context: context,
+        backgroundColor: const Color(0xFFFAFAF8),
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+        builder: (ctx) => StatefulBuilder(
+          builder: (ctx, setSheet) => Padding(
+            padding: EdgeInsets.fromLTRB(
+                16, 12, 16, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36, height: 4,
+                      decoration: BoxDecoration(
+                          color: AppColors.kFieldBorder,
+                          borderRadius: BorderRadius.circular(2)),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                _sectionLabel('Ordenar por'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6, runSpacing: 6,
-                  children: _SortBy.values.map((o) {
-                    final sel = draft.sortBy == o;
-                    return _sheetChip(
-                      o.label, sel,
-                      chipKey: Key('list-sort-chip-${o.name}'),
-                      icon: o.icon,
-                      onTap: () => setSheet(() => draft.sortBy = o),
-                    );
-                  }).toList(),
-                ),
-                const Divider(height: 28),
-                _sectionLabel('Raio de distância'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8, runSpacing: 8,
-                  children: _radiusOptions.map((r) {
-                    final sel = draft.radiusKm == r;
-                    return _sheetChip(_radiusLabel(r), sel,
-                        onTap: () => setSheet(() => draft.radiusKm = r));
-                  }).toList(),
-                ),
-                const Divider(height: 28),
-                _sectionLabel('Estado'),
-                const SizedBox(height: 8),
-                _sheetToggleTile(
-                  icon: Icons.check_circle_outline,
-                  label: 'Apenas sem incidentes',
-                  value: draft.noIncidentsOnly,
-                  onChanged: (v) => setSheet(() {
-                    draft.noIncidentsOnly = v;
-                    if (v) {
-                      draft.maxSeverity = 5;
-                      draft.excludedTypes = <IncidentType>{};
-                    }
-                  }),
-                ),
-                if (!draft.noIncidentsOnly) ...[
-                  const Divider(height: 28),
+                  ),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _sectionLabel('Severidade'),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.kFieldBg,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.kFieldBorder),
-                        ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          _directionButton('≤ Máximo', !draft.severityAtLeast,
-                              onTap: () => setSheet(() => draft.severityAtLeast = false)),
-                          _directionButton('≥ Mínimo', draft.severityAtLeast,
-                              onTap: () => setSheet(() => draft.severityAtLeast = true)),
-                        ]),
+                      const Text('Filtros e ordenação',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                      TextButton(
+                        key: const Key('list-filter-clear'),
+                        onPressed: () => setSheet(() => draft.reset()),
+                        child: Text('Limpar',
+                            style: TextStyle(color: AppColors.kNavyBlue, fontSize: 13)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                    Text(
-                      draft.severityAtLeast
-                          ? 'Mostrar severidade ≥ ${draft.maxSeverity}'
-                          : 'Mostrar severidade ≤ ${draft.maxSeverity}',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.kNavyBlue),
-                    ),
-                  ]),
-                  SliderTheme(
-                    data: SliderTheme.of(ctx).copyWith(
-                      activeTrackColor: AppColors.kNavyBlue,
-                      thumbColor: AppColors.kNavyBlue,
-                      inactiveTrackColor: AppColors.kFieldBorder,
-                      overlayColor: AppColors.kNavyBlue.withValues(alpha: 0.1),
-                      trackHeight: 3,
-                    ),
-                    child: Slider(
-                      value: draft.maxSeverity.toDouble(),
-                      min: 1, max: 5, divisions: 4,
-                      onChanged: (v) => setSheet(() => draft.maxSeverity = v.round()),
-                    ),
-                  ),
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('1 – Menor', style: TextStyle(fontSize: 11, color: AppColors.kGrey)),
-                      Text('5 – Crítico', style: TextStyle(fontSize: 11, color: AppColors.kGrey)),
-                    ],
+                  _sectionLabel('Ordenar por'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6, runSpacing: 6,
+                    children: _SortBy.values.map((o) {
+                      final sel = draft.sortBy == o;
+                      return _sheetChip(
+                        o.label, sel,
+                        chipKey: Key('list-sort-chip-${o.name}'),
+                        icon: o.icon,
+                        onTap: () => setSheet(() => draft.sortBy = o),
+                      );
+                    }).toList(),
                   ),
                   const Divider(height: 28),
-                  _sectionLabel('Tipo de incidente'),
+                  _sectionLabel('Raio de distância'),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8, runSpacing: 8,
-                    children: IncidentType.values.map((t) {
-                      final active = !draft.excludedTypes.contains(t);
-                      return _sheetChip(t.displayName, active,
-                          onTap: () => setSheet(() {
-                            if (active) {
-                              draft.excludedTypes.add(t);
-                            } else {
-                              draft.excludedTypes.remove(t);
-                            }
-                          }));
+                    children: _radiusOptions.map((r) {
+                      final sel = draft.radiusKm == r;
+                      return _sheetChip(_radiusLabel(r), sel,
+                          onTap: () => setSheet(() => draft.radiusKm = r));
                     }).toList(),
                   ),
+                  const Divider(height: 28),
+                  _sectionLabel('Estado'),
                   const SizedBox(height: 8),
-                ],
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity, height: 48,
-                  child: ElevatedButton(
-                    key: const Key('list-filter-apply'),
-                    onPressed: () {
-                      setState(() {
-                        _filters.sortBy = draft.sortBy;
-                        _filters.noIncidentsOnly = draft.noIncidentsOnly;
-                        _filters.maxSeverity = draft.maxSeverity;
-                        _filters.severityAtLeast = draft.severityAtLeast;
-                        _filters.excludedTypes = Set<IncidentType>.from(draft.excludedTypes);
-                        _filters.radiusKm = draft.radiusKm;
-                      });
-                      Navigator.of(ctx).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.kNavyBlue,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      elevation: 0,
-                    ),
-                    child: const Text('Aplicar',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                  _sheetToggleTile(
+                    icon: Icons.check_circle_outline,
+                    label: 'Apenas sem incidentes',
+                    value: draft.noIncidentsOnly,
+                    onChanged: (v) => setSheet(() {
+                      draft.noIncidentsOnly = v;
+                      if (v) {
+                        draft.maxSeverity = 5;
+                        draft.excludedTypes = <IncidentType>{};
+                      }
+                    }),
                   ),
-                ),
-              ],
+                  if (!draft.noIncidentsOnly) ...[
+                    const Divider(height: 28),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _sectionLabel('Severidade'),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.kFieldBg,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.kFieldBorder),
+                          ),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            _directionButton('≤ Máximo', !draft.severityAtLeast,
+                                onTap: () => setSheet(() => draft.severityAtLeast = false)),
+                            _directionButton('≥ Mínimo', draft.severityAtLeast,
+                                onTap: () => setSheet(() => draft.severityAtLeast = true)),
+                          ]),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                      Text(
+                        draft.severityAtLeast
+                            ? 'Mostrar severidade ≥ ${draft.maxSeverity}'
+                            : 'Mostrar severidade ≤ ${draft.maxSeverity}',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.kNavyBlue),
+                      ),
+                    ]),
+                    SliderTheme(
+                      data: SliderTheme.of(ctx).copyWith(
+                        activeTrackColor: AppColors.kNavyBlue,
+                        thumbColor: AppColors.kNavyBlue,
+                        inactiveTrackColor: AppColors.kFieldBorder,
+                        overlayColor: AppColors.kNavyBlue.withValues(alpha: 0.1),
+                        trackHeight: 3,
+                      ),
+                      child: Slider(
+                        value: draft.maxSeverity.toDouble(),
+                        min: 1, max: 5, divisions: 4,
+                        onChanged: (v) => setSheet(() => draft.maxSeverity = v.round()),
+                      ),
+                    ),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('1 – Menor', style: TextStyle(fontSize: 11, color: AppColors.kGrey)),
+                        Text('5 – Crítico', style: TextStyle(fontSize: 11, color: AppColors.kGrey)),
+                      ],
+                    ),
+                    const Divider(height: 28),
+                    _sectionLabel('Tipo de incidente'),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8, runSpacing: 8,
+                      children: IncidentType.values.map((t) {
+                        final active = !draft.excludedTypes.contains(t);
+                        return _sheetChip(t.displayName, active,
+                            onTap: () => setSheet(() {
+                              if (active) {
+                                draft.excludedTypes.add(t);
+                              } else {
+                                draft.excludedTypes.remove(t);
+                              }
+                            }));
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity, height: 48,
+                    child: ElevatedButton(
+                      key: const Key('list-filter-apply'),
+                      onPressed: () {
+                        setState(() {
+                          _filters.sortBy = draft.sortBy;
+                          _filters.noIncidentsOnly = draft.noIncidentsOnly;
+                          _filters.maxSeverity = draft.maxSeverity;
+                          _filters.severityAtLeast = draft.severityAtLeast;
+                          _filters.excludedTypes = Set<IncidentType>.from(draft.excludedTypes);
+                          _filters.radiusKm = draft.radiusKm;
+                        });
+                        Navigator.of(ctx).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.kNavyBlue,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 0,
+                      ),
+                      child: const Text('Aplicar',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      )
+        )
     );
   }
 
@@ -479,21 +485,29 @@ class _ListScreenState extends State<ListScreen> {
     ),
   );
 
-  Widget _disruptionBanner() => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: BoxDecoration(
-      color: const Color(0xFFFFF8E1),
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(color: AppColors.kYellow),
-    ),
-    child: const Row(children: [
-      Icon(Icons.warning_amber_rounded, color: AppColors.kYellow, size: 16),
-      SizedBox(width: 8),
-      Expanded(
-          child: Text('Perturbações ativas em algumas linhas.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF1A1A2E)))),
-    ]),
-  );
+  Widget _disruptionBanner() {
+    final disrupted = _lineStatuses.where((ls) => !ls.isNormal).toList();
+    final names = disrupted.map((ls) => ls.lineName[0].toUpperCase() + ls.lineName.substring(1)).join(', ');
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.kYellow),
+      ),
+      child: Row(children: [
+        const Icon(Icons.warning_amber_rounded, color: AppColors.kYellow, size: 16),
+        const SizedBox(width: 8),
+        Expanded(
+            child: Text(
+              disrupted.length == 1
+                  ? 'Perturbação ativa na linha $names.'
+                  : 'Perturbações ativas nas linhas $names.',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF1A1A2E)),
+            )),
+      ]),
+    );
+  }
 
   Widget _favoritesTabs() => Container(
     padding: const EdgeInsets.all(4),
@@ -625,6 +639,14 @@ class _ListScreenState extends State<ListScreen> {
     return 'Linha $lineName';
   }
 
+  Future<void> _toggleFavourite(String stationId) async {
+    await _repo.toggleFavourite(stationId);
+    if (!mounted) return;
+    final stations = await _repo.getAllStations();
+    if (!mounted) return;
+    setState(() => _allStations = stations);
+  }
+
   Widget _stationTile(Station station) {
     final distance = _distanceKm(station.latitude, station.longitude);
     final fullLine = _fullLineName(station.lineName);
@@ -647,28 +669,24 @@ class _ListScreenState extends State<ListScreen> {
 
     return ListTile(
       key: Key('list-station-tile-${station.id}'),
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => StationDetailScreen(station: station),
-      )),
+      onTap: () async {
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => StationDetailScreen(station: station),
+        ));
+        // Refresh in case favourite was toggled in the detail screen
+        if (!mounted) return;
+        final stations = await _repo.getAllStations();
+        if (!mounted) return;
+        setState(() => _allStations = stations);
+      },
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      title: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              station.name,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A2E)),
-            ),
-          ),
-          if (station.isFavourite) ...[
-            const SizedBox(width: 5),
-            const Icon(Icons.star_rounded, size: 16, color: AppColors.kYellow),
-          ],
-        ],
+      title: Text(
+        station.name,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1A1A2E)),
       ),
       subtitle: Row(children: [
         Container(
@@ -688,7 +706,7 @@ class _ListScreenState extends State<ListScreen> {
         Text(_formatDistance(distance),
             style: const TextStyle(fontSize: 12, color: AppColors.kGrey)),
       ]),
-      // severity badge in trailing
+      // severity badge + favourite star in trailing
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -715,6 +733,23 @@ class _ListScreenState extends State<ListScreen> {
                 ),
               ),
             ),
+          IconButton(
+            key: Key('list-station-tile-${station.id}-favourite'),
+            padding: const EdgeInsets.only(left: 4),
+            constraints: const BoxConstraints(),
+            visualDensity: VisualDensity.compact,
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 80),
+              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+              child: Icon(
+                station.isFavourite ? Icons.star_rounded : Icons.star_outline_rounded,
+                key: ValueKey(station.isFavourite),
+                size: 22,
+                color: station.isFavourite ? AppColors.kYellow : AppColors.kGrey.withValues(alpha: 0.5),
+              ),
+            ),
+            onPressed: () => _toggleFavourite(station.id),
+          ),
           const Icon(Icons.chevron_right, color: AppColors.kGrey, size: 20),
         ],
       ),
@@ -753,7 +788,7 @@ class _ListScreenState extends State<ListScreen> {
     final all = _allStations;
     final lines = _lines(all);
     final filtered = _filtered(all);
-    final hasDisruption = all.any((s) => s.averageRating >= 4);
+    final hasDisruption = _lineStatuses.any((ls) => !ls.isNormal);
     final activeFilters = _filters.activeCount;
 
     return Scaffold(
@@ -801,17 +836,17 @@ class _ListScreenState extends State<ListScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
-            // header inside ListView
-            child: ListView.builder(
-              key: const Key('list-view'),
-              itemCount: filtered.isEmpty ? 2 : filtered.length + 1,
-              itemBuilder: (_, i) {
-                if (i == 0) return _buildHeader(lines, hasDisruption);
-                if (filtered.isEmpty) return _emptyState();
-                return _stationTile(filtered[i - 1]);
-              },
-            ),
-          ),
+        // header inside ListView
+        child: ListView.builder(
+          key: const Key('list-view'),
+          itemCount: filtered.isEmpty ? 2 : filtered.length + 1,
+          itemBuilder: (_, i) {
+            if (i == 0) return _buildHeader(lines, hasDisruption);
+            if (filtered.isEmpty) return _emptyState();
+            return _stationTile(filtered[i - 1]);
+          },
+        ),
+      ),
     );
   }
 }

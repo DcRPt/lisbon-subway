@@ -28,14 +28,15 @@ class MetroRepository {
       for (final station in stations) {
         await local.insertStation(station);
       }
-      return stations;
+      return local.getAllStations();
     }
     return local.getAllStations();
   }
 
   Future<Station> getStationDetail(String id) async {
     if (await connectivity.checkConnectivity()) {
-      return remote.getStationDetail(id);
+      final station = await remote.getStationDetail(id);
+      await local.insertStation(station);
     }
     return local.getStationDetail(id);
   }

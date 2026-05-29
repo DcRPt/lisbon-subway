@@ -65,10 +65,20 @@ class SqfliteMetroDataSource extends MetroDataSource {
 
   @override
   Future<void> insertStation(Station station) async {
+    // Insert new stations, but on conflict update everything except isFavourite
+    // so that syncing from remote never overwrites locally-set favourites.
     await _db!.insert(
       'stations',
       station.toDB(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      conflictAlgorithm: ConflictAlgorithm.ignore, // skip if already exists
+    );
+    // Always update the non-favourite fields so names/coords stay fresh
+    final data = station.toDB()..remove('isFavourite');
+    await _db!.update(
+      'stations',
+      data,
+      where: 'id = ?',
+      whereArgs: [station.id],
     );
   }
 
