@@ -1,7 +1,6 @@
 import 'dart:io' as io;
 import 'package:cmproject/connectivity_module.dart';
 import 'package:cmproject/data/http_metro_datasource.dart';
-import 'package:cmproject/data/metro_repository.dart';
 import 'package:cmproject/data/sqflite_metro_datasource.dart';
 import 'package:cmproject/gps_location_service.dart';
 import 'package:cmproject/http/http_client.dart';

@@ -36,7 +36,6 @@ class _MainScreenState extends State<MainScreen> {
           AppColors.kNavyBlue.withValues(alpha: 0.06),
         ),
         destinations: screens.asMap().entries.map((e) {
-          final selected = e.key == _selectedIndex;
           return NavigationDestination(
             key: e.value.navKey,
             icon:         Icon(e.value.icon,
