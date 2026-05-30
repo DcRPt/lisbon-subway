@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:cmproject/data/app_colors.dart';
 import 'package:cmproject/data/metro_repository.dart';
 import 'package:cmproject/models/line_status.dart';
+import 'package:cmproject/models/waiting_time.dart';
 import 'package:cmproject/models/station.dart';
 import 'package:cmproject/screens/station_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,6 @@ import '../data/generic_data_source.dart';
 import '../data/http_metro_datasource.dart';
 import '../data/sqflite_metro_datasource.dart';
 import '../location_module.dart';
-import '../models/waiting_time.dart';
 import 'list_screen.dart';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -120,9 +120,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final results = await Future.wait([
       _repo.getAllStations(),
-      _repo.getFavourites()
-          .timeout(const Duration(seconds: 5), onTimeout: () => <Station>[])
-          .catchError((_) => <Station>[]),
+      _repo.getFavourites(),
       _repo.getAllLineStatuses(),
       _repo.getDestinations(),
       locationFuture,
@@ -147,7 +145,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
       final waitingTimes = await _repo.getWaitingTimes(nearest.id)
-          .timeout(const Duration(seconds: 5), onTimeout: () => [])
+          .timeout(const Duration(seconds: 3), onTimeout: () => [])
           .catchError((_) => <WaitingTime>[]);
       if (waitingTimes.isNotEmpty) {
         final enriched = Station(
@@ -366,7 +364,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    final color    = _colorForLine(station.lineName);
+    final color = _colorForLine(station.lineName);
     final distance = data.distanceTo(station);
 
     return InkWell(
@@ -494,8 +492,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _favCard(BuildContext context, Station station, _DashboardData data) {
-    final color    = _colorForLine(station.lineName);
-    final avg      = station.averageRating;
+    final color = _colorForLine(station.lineName);
+    final avg = station.averageRating;
     final hasIncidents = station.reports.isNotEmpty;
     final distance = data.distanceTo(station);
 

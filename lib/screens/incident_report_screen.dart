@@ -102,8 +102,9 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
           notes: _notes?.trim().isEmpty ?? true ? null : _notes,
         ),
       );
-      setState(() { _station = null; _type = null; _severity = null; _dateTime = null; _notes = null; });
       _formKey.currentState!.reset();
+      setState(() { _station = null; _type = null; _severity = null; _dateTime = null; _notes = null; });
+      await _loadStations();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Incidente registado com sucesso.'),
         backgroundColor: AppColors.kSuccessGreen,
