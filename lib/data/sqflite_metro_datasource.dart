@@ -12,13 +12,14 @@ class SqfliteMetroDataSource extends MetroDataSource {
 
   // ── Init dbs ──────────────────────────────────────────────────────────────────
 
-  Future<void> init() async {
+  Future<bool> init() async {
     final path = join(await getDatabasesPath(), _dbName);
     _db = await openDatabase(
       path,
       version: _dbVersion,
       onCreate: _onCreate,
     );
+    return true;
   }
 
   Database get db => _db!;
