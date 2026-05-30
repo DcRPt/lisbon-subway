@@ -56,15 +56,6 @@ class MetroRepository {
         .toList(growable: false);
   }
 
-  Future<List<Station>> getFavourites() async {
-    final result = await generic.execute(type: GenericOperationType.GetFavourites);
-    return (result as List<Station>?) ?? [];
-  }
-
-  Future<void> toggleFavourite(String stationId) async {
-    await generic.execute(type: GenericOperationType.ToggleFavourite, data: stationId);
-  }
-
   // ── Incidents ─────────────────────────────────────────────────────────────
 
   Future<void> attachIncident(String stationId, IncidentReport report) async {
@@ -73,6 +64,20 @@ class MetroRepository {
 
   Future<List<IncidentReport>> getIncidentsForStation(String stationId) async {
     return local.getIncidentsForStation(stationId);
+  }
+
+  // ── Favourites ─────────────────────────────────────────────────────────────
+
+  Future<List<Station>> getFavourites() async {
+    final result = await generic.execute(type: GenericOperationType.GetFavourites);
+    final fromGeneric = (result as List<Station>?) ?? [];
+    if (fromGeneric.isNotEmpty) return fromGeneric;
+    final all = await local.getAllStations();
+    return all.where((s) => s.isFavourite).toList();
+  }
+
+  Future<void> toggleFavourite(String stationId) async {
+    await generic.execute(type: GenericOperationType.ToggleFavourite, data: stationId);
   }
 
   // ── Line status ───────────────────────────────────────────────────────────
@@ -90,6 +95,20 @@ class MetroRepository {
 
   Future<List<WaitingTime>> getWaitingTimes(String stationId) async {
     final result = await generic.execute(type: GenericOperationType.GetWaitingTimes, data: stationId);
-    return (result as List<WaitingTime>?) ?? [];
+    final fromGeneric = (result as List<WaitingTime>?) ?? [];
+    if (fromGeneric.isNotEmpty) return fromGeneric;
+    try {
+      final station = await local.getStationDetail(stationId);
+      return station.waitingTimes;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ── Destinations ─────────────────────────────────────────────────────────
+
+  Future<Map<String, String>> getDestinations() async {
+    final result = await generic.execute(type: GenericOperationType.GetDestinations);
+    return (result as Map<String, String>?) ?? {};
   }
 }

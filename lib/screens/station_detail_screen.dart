@@ -79,19 +79,31 @@ class _StationDetailScreenState extends State<StationDetailScreen> {
   }
 
   Future<void> _load() async {
-    final results = await Future.wait([
-      _repo.getStationDetail(widget.station.id),
-      _repo.getWaitingTimes(widget.station.id),
-      _repo.generic.execute(type: GenericOperationType.GetDestinations),
-    ]);
-    if (!mounted) return;
-    setState(() {
-      _station = results[0] as Station;
-      _waitingTimes = results[1] as List<WaitingTime>;
-      _destinations = (results[2] as Map<String, String>?) ?? {};
-      _isFavourite = (_station!).isFavourite;
-      _loading = false;
-    });
+    try {
+      final results = await Future.wait([
+        _repo.getStationDetail(widget.station.id),
+        _repo.getWaitingTimes(widget.station.id),
+        _repo.generic.execute(type: GenericOperationType.GetDestinations),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _station = results[0] as Station;
+        _waitingTimes = results[1] as List<WaitingTime>;
+        _destinations = (results[2] as Map<String, String>?) ?? {};
+        _isFavourite = (_station!).isFavourite;
+        _loading = false;
+      });
+    } catch (_) {
+      // Fall back to the station passed via constructor so the screen
+      // still renders even if local DB doesn't have it yet (e.g. in tests).
+      if (!mounted) return;
+      setState(() {
+        _station = widget.station;
+        _waitingTimes = widget.station.waitingTimes;
+        _isFavourite = widget.station.isFavourite;
+        _loading = false;
+      });
+    }
   }
 
   Future<void> _reload() => _load();
@@ -108,6 +120,59 @@ class _StationDetailScreenState extends State<StationDetailScreen> {
   }
 
   String _destinationName(String id) => _destinations[id] ?? id;
+
+  Widget _departureRow(WaitingTime wt) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            _destinationName(wt.destinationId),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF374151),
+            ),
+          ),
+        ),
+        Row(
+          children: wt.arrivalsMinutes
+              .map((m) => Padding(
+            padding: const EdgeInsets.only(left: 6),
+            child: Container(
+              width: 44,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.kLight,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$m',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    'min',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppColors.kFieldText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ))
+              .toList(),
+        ),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -304,120 +369,49 @@ class _StationDetailScreenState extends State<StationDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.kFieldBorder),
-                      ),
-                      child: Column(
-                        children: _waitingTimes.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final wt = entry.value;
-                          final isLast = index == _waitingTimes.length - 1;
+                    // Group into pairs — each pair = both directions of one platform/line
+                    ...() {
+                      final widgets = <Widget>[];
+                      for (var i = 0; i < _waitingTimes.length; i += 2) {
+                        final a = _waitingTimes[i];
+                        final b = i + 1 < _waitingTimes.length
+                            ? _waitingTimes[i + 1]
+                            : null;
+                        final isLastGroup =
+                            i + 2 >= _waitingTimes.length;
 
-                          return Column(
+                        widgets.add(
+                          Column(
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 12),
-                                child: Row(
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: AppColors.kFieldBorder),
+                                ),
+                                child: Column(
                                   children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Plataforma ${index + 1}',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: AppColors.kFieldText,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Row(children: [
-                                            Container(
-                                              width: 3,
-                                              height: 14,
-                                              decoration: BoxDecoration(
-                                                color: _lineColor(
-                                                    station.lineName),
-                                                borderRadius:
-                                                BorderRadius.circular(2),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              '→ ${_destinationName(wt.destinationId)}',
-                                              style: const TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600,
-                                                color: Color(0xFF1A1A2E),
-                                              ),
-                                            ),
-                                          ]),
-                                        ],
+                                    _departureRow(a),
+                                    if (b != null) ...[
+                                      Divider(
+                                        height: 1,
+                                        color: AppColors.kFieldBorder,
+                                        indent: 14,
+                                        endIndent: 14,
                                       ),
-                                    ),
-                                    Row(
-                                      children: wt.arrivalsMinutes
-                                          .map((m) => Padding(
-                                        padding: const EdgeInsets.only(
-                                            left: 6),
-                                        child: Container(
-                                          width: 40,
-                                          padding:
-                                          const EdgeInsets.symmetric(
-                                              vertical: 7),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.kFieldBg,
-                                            borderRadius:
-                                            BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            mainAxisSize:
-                                            MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                '$m',
-                                                style: const TextStyle(
-                                                  fontWeight:
-                                                  FontWeight.w700,
-                                                  fontSize: 14,
-                                                  color:
-                                                  Color(0xFF111827),
-                                                ),
-                                              ),
-                                              Text(
-                                                'min',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  color: AppColors
-                                                      .kFieldText,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ))
-                                          .toList(),
-                                    ),
+                                      _departureRow(b),
+                                    ],
                                   ],
                                 ),
                               ),
-                              if (!isLast)
-                                Divider(
-                                  height: 1,
-                                  color: AppColors.kFieldBorder,
-                                  indent: 14,
-                                  endIndent: 14,
-                                ),
+                              if (!isLastGroup) const SizedBox(height: 10),
                             ],
-                          );
-                        }).toList(),
-                      ),
-                    ),
+                          ),
+                        );
+                      }
+                      return widgets;
+                    }(),
                   ],
                 ),
               ),
