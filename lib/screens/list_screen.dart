@@ -179,22 +179,24 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   List<Station> _filtered(List<Station> all) {
-    // no active filters on opening
-    if (_query.isEmpty &&
-        !_favoritesOnly &&
-        _selectedLine == null &&
-        _filters.activeCount == 0) {
-      return all;
-    }
-
     final results = all.where((s) {
-      if (_query.isNotEmpty && !s.name.toLowerCase().contains(_query)) return false;
-      if (_favoritesOnly && !s.isFavourite) return false;
+      if (_query.isNotEmpty && !s.name.toLowerCase().contains(_query)) {
+        return false;
+      }
+      if (_favoritesOnly && !s.isFavourite) {
+        return false;
+      }
       if (_selectedLine != null &&
-          !s.lineName.toLowerCase().contains(_selectedLine!.toLowerCase())) return false;
+          !s.lineName.toLowerCase().contains(_selectedLine!.toLowerCase())) {
+        return false;
+      }
       if (_filters.radiusKm != null &&
-          _distanceKm(_userLat, _userLng, s.latitude, s.longitude) > _filters.radiusKm!) return false;
-      if (_filters.noIncidentsOnly && s.reports.isNotEmpty) return false;
+          _distanceKm(_userLat, _userLng, s.latitude, s.longitude) > _filters.radiusKm!) {
+        return false;
+      }
+      if (_filters.noIncidentsOnly && s.reports.isNotEmpty) {
+        return false;
+      }
       if (!_filters.noIncidentsOnly && s.reports.isNotEmpty) {
         final avg = s.averageRating;
         if (_filters.severityAtLeast && avg < _filters.maxSeverity) return false;
@@ -202,7 +204,9 @@ class _ListScreenState extends State<ListScreen> {
       }
       if (_filters.excludedTypes.isNotEmpty &&
           s.reports.isNotEmpty &&
-          s.reports.every((r) => _filters.excludedTypes.contains(r.type))) return false;
+          s.reports.every((r) => _filters.excludedTypes.contains(r.type))) {
+        return false;
+      }
       return true;
     }).toList();
 
@@ -291,7 +295,7 @@ class _ListScreenState extends State<ListScreen> {
                   Wrap(
                     spacing: 8, runSpacing: 8,
                     children: _radiusOptions.map((r) {
-                      final sel = draft.radiusKm == r;
+                      final sel = r != null && draft.radiusKm == r;
                       return _sheetChip(_radiusLabel(r), sel,
                           onTap: () => setSheet(() => draft.radiusKm = r));
                     }).toList(),
