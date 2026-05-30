@@ -48,7 +48,16 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
   Future<void> _loadStations() async {
     final stations = await _repo.getAllStations();
     if (!mounted) return;
-    setState(() => _stations = stations);
+    setState(() {
+      _stations = stations;
+      // Re-match _station by ID so the dropdown value is the exact same instance as its item
+      if (widget.preselectedStation != null) {
+        _station = stations.firstWhere(
+              (s) => s.id == widget.preselectedStation!.id,
+          orElse: () => widget.preselectedStation!,
+        );
+      }
+    });
   }
 
   Future<void> _pickDateTime(Function(DateTime?) onPicked) async {
