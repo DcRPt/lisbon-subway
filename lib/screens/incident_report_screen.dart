@@ -274,14 +274,22 @@ class _IncidentReportScreenState extends State<IncidentReportScreen> {
                 internalSetValue: (state, v) { _dateTime = v; state.didChange(v); },
                 validator: (v) => v == null ? 'Preencha a data e hora' : null,
                 onSaved: (v) => _dateTime = v,
-                builder: (field) => _field('Data e hora', ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    _dateTime != null ? DateFormat('dd/MM/yyyy HH:mm').format(_dateTime!) : 'Selecione a data e hora',
-                    style: TextStyle(fontSize: 14, color: _dateTime != null ? AppColors.kNavyBlue : AppColors.kFieldText),
+                builder: (field) => _field('Data e hora', Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      _dateTime != null
+                          ? DateFormat('dd/MM/yyyy HH:mm').format(_dateTime!)
+                          : 'Selecione a data e hora',
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: _dateTime != null ? AppColors.kNavyBlue : AppColors.kFieldText),
+                    ),
+                    trailing: const Icon(Icons.calendar_today_outlined,
+                        size: 16, color: AppColors.kFieldText),
+                    onTap: () => _pickDateTime(field.didChange),
                   ),
-                  trailing: const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.kFieldText),
-                  onTap: () => _pickDateTime(field.didChange),
                 ), hasError: field.errorText != null, errorText: field.errorText),
               ),
               const SizedBox(height: 16),
