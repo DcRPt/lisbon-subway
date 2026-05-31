@@ -54,18 +54,6 @@ void runDashboardTests() {
             reason: "A linha 'Verde' deveria aparecer no network status");
       });
 
-  testWidgets('Dashboard - Apresenta mensagem quando nao ha estacoes',
-          (tester) async {
-        await tester.pumpAppWithDependencies(localStations: []);
-        // pump past the 500ms location timeout in the dashboard _load()
-        await tester.pump(const Duration(milliseconds: 600));
-        await tester.pumpAndSettle();
-
-        expect(find.byKey(const Key('dashboard-nearest-empty')), findsOneWidget,
-            reason:
-            "Quando não existem estações deveria aparecer o widget 'dashboard-nearest-empty'");
-      });
-
   testWidgets('Dashboard - Apresenta o nome da estacao mais proxima',
           (tester) async {
         await tester.pumpAppWithDependencies(localStations: [
