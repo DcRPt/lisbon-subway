@@ -115,7 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final locationFuture = _location
         .onLocationChanged()
         .first
-        .timeout(const Duration(milliseconds: 500), onTimeout: () => LocationData.fromMap({}))
+        .timeout(const Duration(seconds: 8), onTimeout: () => LocationData.fromMap({}))
         .catchError((_) => LocationData.fromMap({}));
 
     final results = await Future.wait([
