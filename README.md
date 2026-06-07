@@ -11,19 +11,19 @@ a22207476;Guilherme Ribeiro
 
 | Dashboard | Dashboard (cont.) |
 |-----------|-------------------|
-| ![dashboard1](images/dashboard1.png) | ![dashboard2](images/dashboard2.png) |
+|![dashboard1PT2.png](images/dashboard1PT2.png)|![dashboard2PT2.png](images/dashboard2PT2.png)|
 
 | Lista | Filtros |
 |-------|---------|
-| ![lista](images/lista.png) | ![filtro](images/filtro.png) |
+| ![listaPT2.png](images/listaPT2.png) | ![listaFiltrosPT2.png](images/listaFiltrosPT2.png) |
 
 | Detalhes | Mapa |
 |----------|------|
-| ![detalhes](images/detalhes.png) | ![mapa](images/mapa.png) |
+| ![detalhesPT2.png](images/detalhesPT2.png) | ![mapaPT2.png](images/mapaPT2.png) |
 
 | Formulário |
 |------------|
-| ![formulario](images/formulario.png) |
+| ![formularioPT2.png](images/formularioPT2.png) |
 
 ## Funcionalidades implementadas
 
@@ -58,15 +58,17 @@ a22207476;Guilherme Ribeiro
 - Alternar entre todas as estações e apenas favoritas
 - Butões de filtragem por linha
 - Filtros avançados:
-    - Ordenação por distância, nome ou severidade
-    - Raio de distância (500m, 1km, 2km, 5km)
-    - Apenas estações sem incidentes
-    - Severidade mínima ou máxima com slider
-    - Exclusão por tipo de incidente
+  - Ordenação por distância, nome ou severidade
+  - Raio de distância (500m, 1km, 2km, 5km)
+  - Apenas estações sem incidentes
+  - Severidade mínima ou máxima com slider
+  - Exclusão por tipo de incidente
 - Estado vazio com opção de limpar filtros
 
 ### Apresentação das estações — Mapa
-- Imagem do google maps implementada
+- Pins de estações com core representativa da linha de metro
+- Ao clicar em cada pin aparece a distância do utilizador à estação e a média de incidentes
+- Ao clicar novamente vamos para os detalhes da estação
 
 ### Detalhe da estação
 - Nome da estação e linha na AppBar com cor identificativa
@@ -89,6 +91,50 @@ a22207476;Guilherme Ribeiro
 - Feedback de erro por campo e feedback de sucesso após submissão
 - Botão de voltar quando acedido pelo ecrã de detalhe
 
+## Resumo de funcionalidades por parte
+
+### Parte 1
+- Pesquisa e filtros na lista de estações, incluindo favoritos, linha, ordem, raio, severidade e exclusão por tipo de incidente.
+- Uso de geolocalização em vários ecrãs: dashboard, lista de estações e detalhe da estação.
+- Suporte a funcionamento offline com dados locais e experiência contínua quando a rede não está disponível.
+- Navegação e UI consistentes entre dashboard, lista, detalhe e registo de incidentes.
+
+### Parte 2
+- Apresentação das estações em lista usando API online com dados atualizados.
+- Apresentação das estações em mapa com Google Maps e markers.
+- Detalhe da estação com informação obrigatória do nome, linha, distância, incidentes e tempos de espera.
+- Apresentar incidentes vindos da base de dados na página de detalhe.
+- Registo de incidentes na BD com validação e feedback.
+- Vídeo de apresentação incluído como suporte à entrega.
+
+## Arquitetura da aplicação
+
+## Arquitetura da aplicação
+
+A arquitetura da aplicação foi desenhada com base em princípios de software limpo para garantir manutenibilidade, testabilidade e escalabilidade.
+
+- **Injeção de Dependências com Provider**: Utilizamos `Provider` em `main.dart` para injetar dependências como `HttpMetroDataSource`, `SqfliteMetroDataSource`, `ConnectivityModule`, `LocationModule` e `GenericDataSource` na árvore de widgets. Esta prática desacopla a interface de utilizador da lógica de dados, permitindo que os serviços sejam facilmente substituídos ou simulados durante os testes.
+- **Padrão de Repositório / Fonte de Dados**: A aplicação abstrai as fontes de dados em classes distintas. `HttpMetroDataSource` gere as chamadas HTTP, `SqfliteMetroDataSource` gere o armazenamento local e `GenericDataSource` oferece operações comuns. As ecrãs consomem estes serviços através de `context.read<T>()`, mantendo a interface de utilizador leve e focada na apresentação.
+- **Estratégia Offline-First**: A aplicação verifica a conectividade de rede através do `ConnectivityModule`. Quando não há internet, a lógica recorre de forma transparente aos dados locais armazenados em `SqfliteMetroDataSource`, garantindo acesso contínuo às informações essenciais.
+
+## Persistência e Conectividade
+
+- **Online**: Consumo de dados atualizados a partir da API remota através de `HttpMetroDataSource`.
+- **Offline**: Cache local em SQLite com `SqfliteMetroDataSource`, permitindo consulta dos dados quando a rede não está disponível.
+- **Fallback de Conectividade**: O `ConnectivityModule` determina quando usar a fonte remota ou o cache local para assegurar que a aplicação continua a funcionar.
+
+## Estados de Fallback
+
+- **Sem Conectividade**: Dados servidos do cache SQLite com indicador de operação offline e continuidade de navegação.
+- **Lista Vazia**: Mensagens contextuais para indicar que não há estações ou filtros não retornaram resultados.
+- **Sem Incidentes**: Estado vazio com call-to-action para registar o primeiro incidente na estação.
+- **Geolocalização Negada**: A aplicação mantém o funcionamento principal sem cálculo de distâncias, apresentando o conteúdo disponível.
+
 ## Previsão de Nota
 
-* Após muita consideração, chegamos a conclusão de 18,27 valores.
+* (Parte 1) Após muita consideração, chegamos a conclusão de 18,27 valores.
+* (Parte 2) Após mais consideração e tendo em conta a nota da parte 1, acreditamos conseguir alcançar o valor de 18,66 valores.
+
+## Video de Apresentação:
+
+* https://youtu.be/A15Qe-2_fk0
