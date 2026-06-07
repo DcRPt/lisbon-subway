@@ -13,17 +13,17 @@ a22207476;Guilherme Ribeiro
 |-----------|-------------------|
 |![dashboard1PT2.png](images/dashboard1PT2.png)|![dashboard2PT2.png](images/dashboard2PT2.png)|
 
-| Lista | Filtros | Detalhes                                   |
-|-------|---------|--------------------------------------------|
-| ![listaPT2.png](images/listaPT2.png) | ![listaFiltrosPT2.png](images/listaFiltrosPT2.png) | ![detalhesPT2.png](images/detalhesPT2.png) |
+| Lista | Filtros |
+|-------|---------|
+| ![listaPT2.png](images/listaPT2.png) | ![listaFiltrosPT2.png](images/listaFiltrosPT2.png) |
 
 | Mapa | Mapa (cont.) |
 |------|--------------|
 |![mapaPT2.png](images/mapaPT2.png)| ![mapa2PT2.png](images/mapa2PT2.png) |
 
-| Formulário |
-|------------|
-| ![formularioPT2.png](images/formularioPT2.png) |
+| Formulário | Detalhes                                    |
+|------------|---------------------------------------------|
+| ![formularioPT2.png](images/formularioPT2.png) | ![detalhesPT2.png](images/detalhesPT2.png)  |
 
 ## Funcionalidades implementadas
 
