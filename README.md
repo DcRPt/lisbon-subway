@@ -13,13 +13,13 @@ a22207476;Guilherme Ribeiro
 |-----------|-------------------|
 |![dashboard1PT2.png](images/dashboard1PT2.png)|![dashboard2PT2.png](images/dashboard2PT2.png)|
 
-| Lista | Filtros |
-|-------|---------|
-| ![listaPT2.png](images/listaPT2.png) | ![listaFiltrosPT2.png](images/listaFiltrosPT2.png) |
+| Lista | Filtros | Detalhes                                   |
+|-------|---------|--------------------------------------------|
+| ![listaPT2.png](images/listaPT2.png) | ![listaFiltrosPT2.png](images/listaFiltrosPT2.png) | ![detalhesPT2.png](images/detalhesPT2.png) |
 
-| Detalhes | Mapa |
-|----------|------|
-| ![detalhesPT2.png](images/detalhesPT2.png) | ![mapaPT2.png](images/mapaPT2.png) |
+| Mapa | Mapa (cont.) |
+|------|--------------|
+|![mapaPT2.png](images/mapaPT2.png)| ![mapa2PT2.png](images/mapa2PT2.png) |
 
 | Formulário |
 |------------|
@@ -106,8 +106,6 @@ a22207476;Guilherme Ribeiro
 - Apresentar incidentes vindos da base de dados na página de detalhe.
 - Registo de incidentes na BD com validação e feedback.
 - Vídeo de apresentação incluído como suporte à entrega.
-
-## Arquitetura da aplicação
 
 ## Arquitetura da aplicação
 
