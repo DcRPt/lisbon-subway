@@ -8,7 +8,7 @@ class HttpMetroDataSource extends MetroDataSource {
 
   static const _tokenUrl = 'https://api.metrolisboa.pt:8243/token';
   static const _baseUrl  = 'https://api.metrolisboa.pt:8243/estadoServicoML/1.0.1';
-  static const _consumerKey    = 'YOUR_CONSUMER_KEY_HERE';
+  static const _consumerKey = 'YOUR_CONSUMER_KEY_HERE';
   static const _consumerSecret = 'YOUR_CONSUMER_SECRET_HERE';
 
   final HttpClient? _client;
